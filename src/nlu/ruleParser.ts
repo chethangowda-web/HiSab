@@ -123,7 +123,7 @@ function queryOf(s: string): QueryKind | undefined {
   return undefined;
 }
 
-function typeOf(s: string): EntryType | undefined {
+export function typeOf(s: string): EntryType | undefined {
   if (ADVANCE_W.test(s)) return 'advance';
   if (OVERTIME_W.test(s)) return 'overtime';
   if (PAYMENT_W.test(s)) return 'payment';
