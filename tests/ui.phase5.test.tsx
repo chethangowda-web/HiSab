@@ -24,9 +24,12 @@ describe('trust labels, edit and delete', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^ledger$/i }));
     return screen.findAllByTestId('ledger-row');
   };
+  /** Row actions live behind an Options button, to keep the list uncluttered. */
+  const openRow = (row: HTMLElement) => fireEvent.click(within(row).getByRole('button', { name: /options/i }));
 
   it('employer confirm flips the badge, and the entry in the database', async () => {
     const rows = await seed();
+    openRow(rows[0]);
     fireEvent.click(within(rows[0]).getByRole('button', { name: /employer confirms/i }));
     await waitFor(() => expect(screen.getAllByText('Employer-confirmed')).toHaveLength(1));
     expect((await listEntries()).filter((x) => x.source === 'employer_confirmed')).toHaveLength(1);
@@ -35,6 +38,7 @@ describe('trust labels, edit and delete', () => {
   it('edit changes the amount', async () => {
     const rows = await seed();
     const row = rows.find((r) => within(r).queryByText('₹1,000'))!;
+    openRow(row);
     fireEvent.click(within(row).getByRole('button', { name: /^edit$/i }));
     fireEvent.change(within(row).getByLabelText(/amount/i), { target: { value: '1200' } });
     fireEvent.click(within(row).getByRole('button', { name: /^save$/i }));
@@ -44,6 +48,7 @@ describe('trust labels, edit and delete', () => {
 
   it('edit rejects an invalid amount and saves nothing', async () => {
     const rows = await seed();
+    openRow(rows[0]);
     fireEvent.click(within(rows[0]).getByRole('button', { name: /^edit$/i }));
     fireEvent.change(within(rows[0]).getByLabelText(/amount/i), { target: { value: '0' } });
     fireEvent.click(within(rows[0]).getByRole('button', { name: /^save$/i }));
@@ -53,9 +58,11 @@ describe('trust labels, edit and delete', () => {
 
   it('editing a confirmed entry makes it worker-recorded again', async () => {
     const rows = await seed();
+    openRow(rows[0]);
     fireEvent.click(within(rows[0]).getByRole('button', { name: /employer confirms/i }));
     await waitFor(() => expect(screen.getAllByText('Employer-confirmed')).toHaveLength(1));
     const row = screen.getAllByTestId('ledger-row').find((r) => within(r).queryByText('Employer-confirmed'))!;
+    openRow(row);
     fireEvent.click(within(row).getByRole('button', { name: /^edit$/i }));
     fireEvent.change(within(row).getByLabelText(/amount/i), { target: { value: '650' } });
     fireEvent.click(within(row).getByRole('button', { name: /^save$/i }));
@@ -64,6 +71,7 @@ describe('trust labels, edit and delete', () => {
 
   it('delete asks first; "no" keeps the entry, "yes" removes it', async () => {
     const rows = await seed();
+    openRow(rows[0]);
     fireEvent.click(within(rows[0]).getByRole('button', { name: /^delete$/i }));
     expect(within(rows[0]).getByText(/delete this entry/i)).toBeInTheDocument();
     expect(await listEntries()).toHaveLength(4);

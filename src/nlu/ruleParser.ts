@@ -118,11 +118,11 @@ function extractEmployer(tokens: string[], known: string[]): string | undefined 
 const QUESTION = /how much|how many|kitna|kitne|kitni|कितना|कितने|कितनी|ಎಷ್ಟು|\?/;
 const DAYS_Q = /how many days|days worked|kitne din|कितने दिन|ಎಷ್ಟು ದಿನ/;
 const OWED_Q = /\bowe\b|\bowes\b|pending|outstanding|balance|\bbaaki\b|\bbaki\b|\bdena\b|\bdene\b|\bdue\b|unpaid|not paid|to pay me|\blena\b|\blene\b|बाकी|देना|देने|लेना|ಬಾಕಿ|ಕೊಡಬೇಕು/;
-const ADVANCE_Q = /advance|peshgi|पेशगी|ಮುಂಗಡ/;
+const ADVANCE_Q = /advance|peshgi|पेशगी|एडवांस|अडवांस|ಮುಂಗಡ|ಅಡ್ವಾನ್ಸ್/;
 const EARNED_Q = /earn|\bmade\b|kamaya|kamai|kamaye|income|salary|कमाया|कमाई|ಸಂಪಾದ|ಗಳಿಸ/;
 const MONTH = /this month|\bmonth\b|mahine|mahina|इस महीने|ಈ ತಿಂಗಳು/;
 
-const ADVANCE_W = /\badvance\b|peshgi|पेशगी|ಮುಂಗಡ|ಅಡ್ವಾನ್ಸ್/;
+const ADVANCE_W = /\badvance\b|peshgi|पेशगी|एडवांस|अडवांस|ಮುಂಗಡ|ಅಡ್ವಾನ್ಸ್/;
 const OVERTIME_W = /overtime|\bextra\b|\bekstra\b|ओवरटाइम|ಓವರ್ಟೈಮ್|ಹೆಚ್ಚುವರಿ/;
 const PAYMENT_W = /\bpaid\b|\bpayment\b|\bgave\b|\bgive\b|\bgiven\b|\breceived\b|\bgot\b|\bdiya\b|\bdiye\b|\bmila\b|\bmile\b|\bmili\b|दिया|दिए|मिला|मिले|ಕೊಟ್ಟ|ಸಿಕ್ಕಿ/;
 const WORK_W = /\bwork(?:ed|ing)?\b|\bkaam\b|\bkiya\b|\bkelasa\b|\bmadide\b|\bduty\b|काम|ಕೆಲಸ/;

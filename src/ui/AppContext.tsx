@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Employer, Entry, Lang } from '../domain/types';
 import { clearDemoData, db, listEmployers, listEntries } from '../db/db';
 import { seedDemoData } from '../db/seed';
-import { isLang, uiText, type UiText } from '../i18n/ui';
+import { detectLanguage, isLang, uiText, type UiText } from '../i18n/ui';
 
 interface AppState {
   lang: Lang;
@@ -27,7 +27,7 @@ interface AppState {
 const Ctx = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('en-IN');
+  const [lang, setLangState] = useState<Lang>(() => detectLanguage());
   const [allEntries, setAllEntries] = useState<Entry[]>([]);
   const [allEmployers, setAllEmployers] = useState<Employer[]>([]);
   const [demoMode, setDemoModeState] = useState(false);

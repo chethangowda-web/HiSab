@@ -38,6 +38,19 @@ function datePhrase(lang: Lang, date: string | undefined, today: string): string
   return `${Number(dd)} ${MONTHS[lang][Number(mm) - 1]}`;
 }
 
+const capitalise = (s: string) => (/^[a-z]/.test(s) ? s[0].toUpperCase() + s.slice(1) : s);
+
+/**
+ * A date for headings and cards: "Today", "Yesterday", or "5 January 2026".
+ * (Spoken read-backs use datePhrase, which leaves out the year.)
+ */
+export function friendlyDate(lang: Lang, date: string, today: string): string {
+  if (date === today) return capitalise(TODAY[lang]);
+  if (date === dayBefore(today)) return capitalise(YESTERDAY[lang]);
+  const [yyyy, mm, dd] = date.split('-');
+  return `${Number(dd)} ${MONTHS[lang][Number(mm) - 1]} ${yyyy}`;
+}
+
 const TYPE: Record<Lang, Record<EntryType, string>> = {
   'en-IN': { work: 'work', overtime: 'overtime', advance: 'advance', payment: 'payment' },
   'hi-IN': { work: 'काम', overtime: 'ओवरटाइम', advance: 'एडवांस', payment: 'भुगतान' },

@@ -56,7 +56,7 @@ describe('Home', () => {
     const mic = await screen.findByRole('button', { name: /tap to speak/i });
     expect(mic.className).toMatch(/\bh-28\b/);
     expect(mic.className).toMatch(/\bw-28\b/);
-    expect(await screen.findByText(/₹1,100/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('owed-total')).toHaveTextContent('₹1,100'));
   });
 
   it('shows a text box instead of the mic when speech is not supported', async () => {
@@ -98,7 +98,7 @@ describe('Home', () => {
     await waitFor(async () => expect(await listEntries()).toHaveLength(1), { timeout: 3000 });
     const [saved] = await listEntries();
     expect(saved).toMatchObject({ type: 'work', amount: 700, source: 'worker' });
-    expect(await screen.findByText(/^Saved\.$/)).toBeInTheDocument();
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent(/saved/i);
   });
 
   it('asks a spoken follow-up when the employer is missing', async () => {

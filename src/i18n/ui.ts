@@ -64,6 +64,18 @@ export interface UiText {
   edgeOk: string;
   edgeDown: string;
   thinking: string;
+  youSaid: string;
+  savedShort: string;
+  undo: string;
+  examplesTitle: string;
+  moreActions: string;
+  welcomeTitle: string;
+  welcomeText: string;
+  tryDemo: string;
+  byEmployer: string;
+  loading: string;
+  hoursUnit: string;
+  statementFor: string;
 }
 
 const en: UiText = {
@@ -130,6 +142,18 @@ const en: UiText = {
   edgeOk: 'Connected to the local model.',
   edgeDown: 'Not connected. The app still works without it. To start it, run: npm run edge',
   thinking: 'Thinking…',
+  youSaid: 'You said',
+  savedShort: 'Saved',
+  undo: 'Undo',
+  examplesTitle: 'You can say',
+  moreActions: 'Options',
+  welcomeTitle: 'Welcome!',
+  welcomeText: 'Say what work you did or what you were paid. BoliHisab keeps your hisab, so nobody can forget or dispute it.',
+  tryDemo: 'Try the demo',
+  byEmployer: 'By employer',
+  loading: 'Loading…',
+  hoursUnit: 'h',
+  statementFor: 'Statement for',
 };
 
 const hi: UiText = {
@@ -196,6 +220,18 @@ const hi: UiText = {
   edgeOk: 'लोकल मॉडल से जुड़ गया।',
   edgeDown: 'जुड़ा नहीं है। इसके बिना भी ऐप चलता है। शुरू करने के लिए चलाएँ: npm run edge',
   thinking: 'सोच रहा हूँ…',
+  youSaid: 'आपने कहा',
+  savedShort: 'सेव हुआ',
+  undo: 'वापस लें',
+  examplesTitle: 'आप ऐसे बोल सकते हैं',
+  moreActions: 'विकल्प',
+  welcomeTitle: 'स्वागत है!',
+  welcomeText: 'बोलकर बताइए कि आपने क्या काम किया या कितने पैसे मिले। बोलीहिसाब आपका हिसाब रखता है, ताकि कोई भूल या झगड़ा न हो।',
+  tryDemo: 'डेमो आज़माएँ',
+  byEmployer: 'मालिक के हिसाब से',
+  loading: 'लोड हो रहा है…',
+  hoursUnit: 'घं',
+  statementFor: 'स्टेटमेंट',
 };
 
 const kn: UiText = {
@@ -262,6 +298,18 @@ const kn: UiText = {
   edgeOk: 'ಲೋಕಲ್ ಮಾದರಿಗೆ ಸಂಪರ್ಕವಾಗಿದೆ.',
   edgeDown: 'ಸಂಪರ್ಕವಾಗಿಲ್ಲ. ಇಲ್ಲದಿದ್ದರೂ ಆಪ್ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಪ್ರಾರಂಭಿಸಲು ಚಲಾಯಿಸಿ: npm run edge',
   thinking: 'ಯೋಚಿಸುತ್ತಿದ್ದೇನೆ…',
+  youSaid: 'ನೀವು ಹೇಳಿದ್ದು',
+  savedShort: 'ಉಳಿಸಲಾಗಿದೆ',
+  undo: 'ಹಿಂದಕ್ಕೆ',
+  examplesTitle: 'ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು',
+  moreActions: 'ಆಯ್ಕೆಗಳು',
+  welcomeTitle: 'ಸ್ವಾಗತ!',
+  welcomeText: 'ನೀವು ಮಾಡಿದ ಕೆಲಸ ಅಥವಾ ಸಿಕ್ಕ ಹಣವನ್ನು ಹೇಳಿ. ಬೋಲಿಹಿಸಾಬ್ ನಿಮ್ಮ ಲೆಕ್ಕ ಇಡುತ್ತದೆ, ಯಾರೂ ಮರೆಯುವುದಿಲ್ಲ, ವಾದ ಮಾಡುವುದಿಲ್ಲ.',
+  tryDemo: 'ಡೆಮೋ ಪ್ರಯತ್ನಿಸಿ',
+  byEmployer: 'ಮಾಲೀಕರ ಪ್ರಕಾರ',
+  loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
+  hoursUnit: 'ಗಂ',
+  statementFor: 'ಹೇಳಿಕೆ',
 };
 
 const ALL: Record<Lang, UiText> = { 'en-IN': en, 'hi-IN': hi, 'kn-IN': kn };
@@ -275,6 +323,12 @@ export const LANGUAGES: { lang: Lang; label: string }[] = [
 ];
 
 export const isLang = (v: unknown): v is Lang => v === 'en-IN' || v === 'hi-IN' || v === 'kn-IN';
+
+/** First-launch language: the phone's language if we support it, otherwise English. */
+export function detectLanguage(browserLanguage: string | undefined = typeof navigator === 'undefined' ? undefined : navigator.language): Lang {
+  const base = (browserLanguage ?? '').toLowerCase().split('-')[0];
+  return base === 'kn' ? 'kn-IN' : base === 'hi' ? 'hi-IN' : 'en-IN';
+}
 
 /** Rupees with Indian digit grouping, e.g. ₹1,10,000. Negative amounts show a leading minus. */
 export function inr(n: number): string {
