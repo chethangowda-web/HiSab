@@ -11,11 +11,11 @@ flowchart LR
       DB[(IndexedDB<br/>ledger)]
       PWA <--> DB
     end
-    PWA -.optional, only if key set.-> SRV[Tiny Node proxy<br/>/api/parse]
-    SRV -.-> LLM[LLM API]
+    PWA -.optional edge mode.-> SRV[Tiny Node proxy<br/>/api/parse]
+    SRV -.-> LLM[Local open model<br/>Gemma-4-E2B / Qwen2.5-3B<br/>via Ollama or llama.cpp]
 ```
 
-Everything works offline-first on the device. The server and LLM are **optional enhancements**, never required.
+Everything works offline-first on the device. The local model server is an **optional enhancement**, never required. No closed API, no keys, no per-call cost, so the same stack can run on an edge device.
 
 ## 2. Voice pipeline (the core flow)
 
@@ -117,7 +117,8 @@ Balance for an employer = (work wages + overtime) − (advances + payments).
 |---|---|---|
 | Client | React + TypeScript + Vite PWA | Fast to build, installable, mobile-first |
 | Speech | Browser Web Speech API | No keys, supports `kn-IN`, `hi-IN`, `en-IN` in Chrome/Android |
-| Parsing | Rule-based default, optional LLM | Repo runs with no secrets; LLM handles messy mixed-language |
+| Parsing | Rule-based default, optional local open LLM (Gemma-4-E2B, backup Qwen2.5-3B) | Repo runs with no secrets; small open model is cheap and edge-deployable; LLM handles messy mixed-language |
+| Hallucination guard | Amount must appear in transcript, JSON-constrained, temp 0 | Small models invent values; this blocks them before confirm |
 | Storage | IndexedDB via Dexie | Persistent, offline, no backend |
 | PDF | jsPDF in browser | No server needed |
 | Money | Integer rupees | No float errors |

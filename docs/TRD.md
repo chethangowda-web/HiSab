@@ -7,7 +7,7 @@
 - jsPDF + jspdf-autotable
 - Web Speech API: `SpeechRecognition`, `speechSynthesis`
 - Vitest for unit tests
-- Optional: Node (Express) proxy `server/` for LLM parsing
+- Optional "edge mode": local open-source LLM (primary `google/gemma-4-E2B`, backup `Qwen2.5-3B-Instruct`, 4-bit quantized) served via Ollama/llama.cpp, called through a small Node proxy `server/`. No paid or closed API, so no keys and no per-call cost.
 
 ## 2. Repo layout
 ```
@@ -42,7 +42,8 @@ type Intent =
 ```
 
 ## 4. Speech
-- STT: `webkitSpeechRecognition`, `lang` from settings, `interimResults=false`, read `confidence` of the top alternative.
+- STT, phase 1 (ship first): `webkitSpeechRecognition`, which is not offline (Chrome sends audio to Google). Phase 2 (edge mode, if time allows): open models, `AI4Bharat IndicConformer` first and `Whisper small` as a fallback, run locally behind the same `SpeechInput` interface so the swap is a config change.
+- Browser STT settings: `lang` from settings, `interimResults=false`, read `confidence` of the top alternative.
 - Confidence under 0.6, or an empty transcript, sends the user to a "please repeat" prompt (max 2 retries, then tap-input fallback).
 - TTS: `speechSynthesis` with a voice matching the language; fall back to `en-IN` if the language voice is missing, and show text on screen as well.
 - Feature-detect on load. If STT is unsupported, switch to typed input and show a banner. Demo mode stays available.
@@ -56,7 +57,23 @@ type Intent =
 - Employer name: token before `ke site|ka|ne|at|ಅವರ` or matched against known employers (fuzzy, Levenshtein ≤ 2).
 - Returns missing fields list.
 
-**LLMParser (optional):** POST `/api/parse` with `{transcript, lang, knownEmployers, today}`; the LLM returns JSON validated against the same schema. It is used only when `LLM_API_KEY` is set on the server. On any failure, fall back to RuleParser.
+**LLMParser (optional, edge mode):** POST `/api/parse` with `{transcript, lang, knownEmployers, today}` to a locally hosted open model. Used only when the local model server is reachable. On any failure, fall back to RuleParser.
+
+**Model choice (open-source, edge-deployable, no per-call cost):**
+| Role | Model | Notes |
+|---|---|---|
+| Primary | `google/gemma-4-E2B` | ~2B effective params, cheap to run, expected better Indic coverage |
+| Backup | `Qwen2.5-3B-Instruct` | Heavier, but more reliable than the 1.5B |
+| Rejected | `Qwen2.5-1.5B-Instruct` | Hallucinated heavily in our tests |
+| Rejected | `Qwen2.5-7B-Instruct` | Too heavy for edge devices |
+
+The final choice is made by a benchmark: the same ~30 utterances (Kannada, Hindi, English, mixed) through Gemma E2B and Qwen 3B, scored on amount accuracy and invented fields. Keep the winner.
+
+**Anti-hallucination rules (apply to any model):**
+1. Temperature 0 and output constrained to the JSON schema.
+2. The parsed amount, or its number word, **must appear in the transcript**. If not, reject the parse and ask the user to repeat.
+3. The LLM only extracts fields. Ledger maths stays in code.
+4. Read-back and confirmation stay mandatory.
 
 **Validator (hard rules):** amount must be a positive integer under 100000; a date in the future is rejected; a record with no amount is never saved; hours between 0 and 24.
 

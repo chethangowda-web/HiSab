@@ -24,7 +24,8 @@
 ## C. Engineering rules
 1. **No secrets in the repo.** `.env` is gitignored, `.env.example` is committed, and the app must run with it absent.
 2. The app must start with `npm install && npm run dev`. Check this on a clean clone before submitting.
-3. The LLM path is optional and every call has a rule-based fallback.
+3. The LLM path is optional, **open-source and locally hosted only** (no closed or paid APIs), and every call has a rule-based fallback.
+3a. A parsed amount that does not appear in the transcript is **rejected**, never shown for confirmation.
 4. Domain logic (ledger, parser, validator) is **pure and unit tested**. UI never does money math.
 5. Feature-detect speech APIs. Unsupported means a typed or tap fallback, never a crash.
 6. Touch targets are at least 56px, and the mic is at least 96px. Font is at least 18px.
