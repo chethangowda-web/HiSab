@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { addEntry, db, deleteEntry, newId } from '../db/db';
+import { db, deleteEntry, newId } from '../db/db';
 import { localISODate } from '../domain/dates';
-import type { Draft } from '../domain/types';
+import type { Draft, Entry } from '../domain/types';
 import { inr } from '../i18n/ui';
 import { parseWithFallback } from '../nlu/llmParser';
-import { CONFIDENCE_MIN, initialState, step, type DialogueCtx, type DialogueEvent, type DialogueState, type Phase } from '../voice/dialogue';
+import {
+  CONFIDENCE_MIN,
+  initialState,
+  step,
+  type DialogueCtx,
+  type DialogueEvent,
+  type DialogueState,
+  type PendingAction,
+  type Phase,
+} from '../voice/dialogue';
 import { isSpeechSupported, listen } from '../voice/speechInput';
 import { speak } from '../voice/speechOutput';
 import { useApp } from './AppContext';
@@ -13,8 +22,9 @@ import { useApp } from './AppContext';
 const SAVED_BAR_MS = 8000;
 
 export interface SavedInfo {
-  id: string;
-  /** e.g. "Ramesh ₹500" */
+  /** Every entry saved by this confirmation (several for "3 din"). */
+  ids: string[];
+  /** e.g. "Ramesh ₹500" or "Ramesh · 3 × ₹700" */
   label: string;
   /** Set if saving created this employer, so Undo can remove it again. */
   createdEmployerId?: string;
@@ -26,10 +36,14 @@ export interface DialogueView {
   phrase: string;
   /** What the app heard the user say, shown so mistakes are easy to spot. */
   heard: string;
-  /** The entry waiting for a yes/no (only in the CONFIRM phase). */
+  /** The entry waiting for a yes/no (CONFIRM phase, entries only). */
   draft?: Draft;
+  /** A spoken command waiting for yes/no (CONFIRM phase, commands only). */
+  action?: PendingAction;
   /** The entry just saved, until the bar times out or the next entry starts. */
   saved: SavedInfo | null;
+  /** A reminder confirmed by voice: browsers need a tap to open WhatsApp, so show a button. */
+  whatsappText?: string;
   listening: boolean;
   /** Waiting for the optional local model. */
   thinking: boolean;
@@ -46,8 +60,9 @@ export interface UseDialogue extends DialogueView {
   typed(text: string): Promise<void>;
   yes(): void;
   no(): void;
-  /** Removes the entry that was just saved. */
+  /** Removes the entries that were just saved. */
   undo(): Promise<void>;
+  dismissWhatsApp(): void;
 }
 
 const INITIAL_VIEW: DialogueView = {
@@ -60,6 +75,8 @@ const INITIAL_VIEW: DialogueView = {
   needTyping: false,
   micIssue: '',
 };
+
+export const whatsappUrl = (text: string) => `https://wa.me/?text=${encodeURIComponent(text)}`;
 
 export function useDialogue(): UseDialogue {
   const app = useApp();
@@ -96,24 +113,18 @@ export function useDialogue(): UseDialogue {
         entries: a.entries,
         newId,
         now: Date.now,
+        workerName: a.workerName,
       };
 
       // A new sentence starts a new entry: drop the previous "Saved" bar and show what was heard.
       if (input.type === 'heard') {
         clearSaved();
-        if (mounted.current) setView((v) => ({ ...v, heard: input.text.trim() }));
+        if (mounted.current) setView((v) => ({ ...v, heard: input.text.trim(), whatsappText: undefined }));
       }
 
       let ev = input;
       // Edge mode: when the rules cannot fully understand a sentence, a local model may help.
-      // It is never consulted while answering a clarifying question.
-      if (
-        input.type === 'heard' &&
-        a.edgeMode &&
-        input.text.trim() &&
-        input.confidence >= CONFIDENCE_MIN &&
-        state.current.phase !== 'CLARIFY'
-      ) {
+      if (input.type === 'heard' && a.edgeMode && input.text.trim() && input.confidence >= CONFIDENCE_MIN && state.current.phase !== 'CLARIFY') {
         if (mounted.current) setView((v) => ({ ...v, thinking: true }));
         const parsed = await parseWithFallback(
           input.text,
@@ -132,6 +143,7 @@ export function useDialogue(): UseDialogue {
           phase: r.state.phase,
           phrase: r.speak ?? v.phrase,
           draft: r.state.phase === 'CONFIRM' ? r.state.draft : undefined,
+          action: r.state.phase === 'CONFIRM' ? r.state.action : undefined,
           needTyping: r.needTyping ?? false,
         }));
       }
@@ -139,21 +151,38 @@ export function useDialogue(): UseDialogue {
       // Persist before speaking "Saved" so the words are true.
       // In demo mode everything created is flagged, so it can never mix with real records.
       const flag = a.demoMode ? { demo: true } : {};
-      if (r.newEmployer) await db.employers.put({ ...r.newEmployer, ...flag });
-      if (r.save) {
-        await addEntry({ ...r.save, ...flag });
-        await a.reload();
-        const name = r.newEmployer?.name ?? a.employers.find((e) => e.id === r.save!.employerId)?.name ?? '';
-        const saved: SavedInfo = {
-          id: r.save.id,
-          label: `${name} ${inr(r.save.amount)}`.trim(),
-          createdEmployerId: r.newEmployer?.id,
-        };
-        if (mounted.current) {
-          setView((v) => ({ ...v, saved }));
-          clearTimeout(savedTimer.current);
-          savedTimer.current = setTimeout(clearSaved, SAVED_BAR_MS);
-        }
+      const saves: Entry[] = r.saves ?? (r.save ? [r.save] : []);
+      let changed = false;
+      if (r.newEmployer) {
+        await db.employers.put({ ...r.newEmployer, ...flag });
+        changed = true;
+      }
+      if (r.updateEmployer) {
+        await db.employers.update(r.updateEmployer.id, { dailyRate: r.updateEmployer.dailyRate });
+        changed = true;
+      }
+      if (saves.length) {
+        await db.entries.bulkPut(saves.map((s) => ({ ...s, ...flag })));
+        changed = true;
+      }
+      if (r.deleteEntryId) {
+        await deleteEntry(r.deleteEntryId);
+        changed = true;
+      }
+      if (changed) await a.reload();
+
+      if (saves.length && mounted.current) {
+        const first = saves[0];
+        const name = r.newEmployer?.name ?? a.employers.find((e) => e.id === first.employerId)?.name ?? '';
+        const label = saves.length > 1 ? `${name} · ${saves.length} × ${inr(first.amount)}` : `${name} ${inr(first.amount)}`;
+        setView((v) => ({ ...v, saved: { ids: saves.map((s) => s.id), label: label.trim(), createdEmployerId: r.newEmployer?.id } }));
+        clearTimeout(savedTimer.current);
+        savedTimer.current = setTimeout(clearSaved, SAVED_BAR_MS);
+      }
+      if (r.navigate) a.openStatement(r.navigate.employerId);
+      if (r.openWhatsApp && viaVoice && mounted.current) {
+        // No tap happened, so the browser may block a pop-up: offer a button instead.
+        setView((v) => ({ ...v, whatsappText: r.openWhatsApp }));
       }
 
       if (r.speak) await speak(r.speak, a.lang);
@@ -189,7 +218,7 @@ export function useDialogue(): UseDialogue {
   const undo = useCallback(async () => {
     const saved = view.saved;
     if (!saved) return;
-    await deleteEntry(saved.id);
+    for (const id of saved.ids) await deleteEntry(id);
     // If saving created the employer and nothing else uses it, remove it too.
     if (saved.createdEmployerId) {
       const stillUsed = (await db.entries.where('employerId').equals(saved.createdEmployerId).count()) > 0;
@@ -198,7 +227,7 @@ export function useDialogue(): UseDialogue {
     await latest.current.reload();
     state.current = initialState;
     clearTimeout(savedTimer.current);
-    if (mounted.current) setView((v) => ({ ...v, saved: null, phase: 'IDLE', phrase: '', heard: '', draft: undefined }));
+    if (mounted.current) setView((v) => ({ ...v, saved: null, phase: 'IDLE', phrase: '', heard: '', draft: undefined, action: undefined }));
   }, [view.saved]);
 
   return {
@@ -209,5 +238,6 @@ export function useDialogue(): UseDialogue {
     yes: () => void run({ type: 'tap_yes' }, false),
     no: () => void run({ type: 'tap_no' }, false),
     undo,
+    dismissWhatsApp: () => setView((v) => ({ ...v, whatsappText: undefined })),
   };
 }

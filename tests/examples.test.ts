@@ -48,3 +48,15 @@ describe('advance written the way speech recognition spells it', () => {
     expect(parseUtterance('रमेश से कितना एडवांस लिया?', ctx)).toMatchObject({ kind: 'query', q: 'advances' });
   });
 });
+
+describe.each<Lang>(['en-IN', 'hi-IN', 'kn-IN'])('voice command examples (%s)', (lang) => {
+  const ctx = { today, employers: [] as string[], lang };
+  it('each shown command parses as the intended command', async () => {
+    const { COMMAND_EXAMPLES } = await import('../src/i18n/examples');
+    const [statement, remind, undo, rate] = COMMAND_EXAMPLES[lang];
+    expect(parseUtterance(statement, ctx)).toMatchObject({ kind: 'command', cmd: 'statement' });
+    expect(parseUtterance(remind, ctx)).toMatchObject({ kind: 'command', cmd: 'remind' });
+    expect(parseUtterance(undo, ctx)).toMatchObject({ kind: 'command', cmd: 'undo' });
+    expect(parseUtterance(rate, ctx)).toMatchObject({ kind: 'command', cmd: 'set_rate', amount: 750 });
+  });
+});

@@ -22,7 +22,16 @@ interface AppState {
   /** Optional local AI model helps with sentences the rules cannot understand. */
   edgeMode: boolean;
   setEdgeMode(on: boolean): void;
+  /** Which screen is showing; lifted here so a voice command can navigate. */
+  tab: Tab;
+  setTab(tab: Tab): void;
+  /** Employer whose statement is open (on the Employers tab), if any. */
+  statementFor: string | null;
+  openStatement(employerId: string): void;
+  closeStatement(): void;
 }
+
+export type Tab = 'home' | 'ledger' | 'employers' | 'payments' | 'settings';
 
 const Ctx = createContext<AppState | null>(null);
 
@@ -34,6 +43,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [workerName, setWorkerNameState] = useState('');
   const [ready, setReady] = useState(false);
   const [edgeMode, setEdgeModeState] = useState(false);
+  const [tab, setTabState] = useState<Tab>('home');
+  const [statementFor, setStatementFor] = useState<string | null>(null);
+
+  const setTab = useCallback((t: Tab) => {
+    setTabState(t);
+    setStatementFor(null);
+  }, []);
+  const openStatement = useCallback((employerId: string) => {
+    setTabState('employers');
+    setStatementFor(employerId);
+  }, []);
+  const closeStatement = useCallback(() => setStatementFor(null), []);
 
   const reload = useCallback(async () => {
     const [e, m] = await Promise.all([listEntries(), listEmployers()]);
@@ -111,8 +132,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setWorkerName,
       edgeMode,
       setEdgeMode,
+      tab,
+      setTab,
+      statementFor,
+      openStatement,
+      closeStatement,
     }),
-    [lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode],
+    [lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

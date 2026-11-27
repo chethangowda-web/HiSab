@@ -78,7 +78,7 @@ function Hero({ compact }: { compact: boolean }) {
 export default function Home() {
   const { entries, demoMode } = useApp();
   const d = useDialogue();
-  const answering = d.phase === 'CONFIRM' || d.phase === 'CLARIFY';
+  const answering = d.phase === 'CONFIRM' || d.phase === 'CLARIFY' || !!d.whatsappText;
   return (
     <div className="flex flex-col gap-5">
       {entries.length === 0 && !demoMode ? <Welcome /> : <Hero compact={answering} />}

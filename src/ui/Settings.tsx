@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { checkEdge } from '../nlu/llmParser';
 import { LANGUAGES } from '../i18n/ui';
+import { db } from '../db/db';
 import { useApp } from './AppContext';
+import Avatar from './Avatar';
 import Switch from './Switch';
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
@@ -15,8 +17,43 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
 
 type EdgeStatus = 'idle' | 'checking' | 'ok' | 'down';
 
+/** One employer's usual daily rate; saved when the field loses focus, ignored if not a valid amount. */
+function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }) {
+  const { t, reload } = useApp();
+  const [value, setValue] = useState(rate ? String(rate) : '');
+  useEffect(() => setValue(rate ? String(rate) : ''), [rate]);
+  const save = async () => {
+    const n = Number(value.trim());
+    if (value.trim() === '' || !Number.isInteger(n) || n <= 0 || n >= 100000) {
+      setValue(rate ? String(rate) : '');
+      return;
+    }
+    if (n !== rate) {
+      await db.employers.update(id, { dailyRate: n });
+      await reload();
+    }
+  };
+  return (
+    <li className="flex items-center gap-3">
+      <Avatar name={name} size="h-10 w-10 text-lg" />
+      <span className="min-w-0 flex-1 break-words text-lg font-semibold">{name}</span>
+      <span className="text-lg text-slate-500">₹</span>
+      <input
+        aria-label={`${name} ${t.dailyRateAria}`}
+        inputMode="numeric"
+        value={value}
+        onChange={(ev) => setValue(ev.target.value)}
+        onBlur={() => void save()}
+        onKeyDown={(ev) => ev.key === 'Enter' && (ev.target as HTMLInputElement).blur()}
+        className="h-12 w-24 rounded-xl border border-slate-300 px-3 text-right text-xl"
+      />
+      <span className="text-slate-500">{t.perDayUnit}</span>
+    </li>
+  );
+}
+
 export default function Settings() {
-  const { t, lang, setLang, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode } = useApp();
+  const { t, lang, setLang, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, employers } = useApp();
   const [edge, setEdge] = useState<EdgeStatus>('idle');
 
   // When the smart helper is on, show whether the local model can actually be reached.
@@ -64,6 +101,17 @@ export default function Settings() {
           className="h-14 rounded-xl border border-slate-300 px-4 text-xl"
         />
       </Card>
+
+      {employers.length > 0 && (
+        <Card title={t.rateTitle}>
+          <ul className="flex flex-col gap-2">
+            {employers.map((e) => (
+              <RateRow key={e.id} id={e.id} name={e.name} rate={e.dailyRate} />
+            ))}
+          </ul>
+          <p className="text-slate-600">{t.ratesHelp}</p>
+        </Card>
+      )}
 
       <Card title={t.demoModeLabel}>
         <div className="flex items-center justify-between gap-4">

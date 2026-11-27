@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import type { Lang } from './domain/types';
 import { LANGUAGES } from './i18n/ui';
-import { AppProvider, useApp } from './ui/AppContext';
+import { AppProvider, useApp, type Tab } from './ui/AppContext';
 import Employers from './ui/Employers';
 import Home from './ui/Home';
 import Ledger from './ui/Ledger';
@@ -9,7 +8,6 @@ import Payments from './ui/Payments';
 import Settings from './ui/Settings';
 import Statement from './ui/Statement';
 
-type Tab = 'home' | 'ledger' | 'employers' | 'payments' | 'settings';
 
 const SHORT: Record<Lang, string> = { 'kn-IN': 'ಕ', 'hi-IN': 'हि', 'en-IN': 'EN' };
 
@@ -52,9 +50,7 @@ function Loading() {
 }
 
 function Shell() {
-  const { t, demoMode, ready } = useApp();
-  const [tab, setTab] = useState<Tab>('home');
-  const [statementFor, setStatementFor] = useState<string | null>(null);
+  const { t, demoMode, ready, tab, setTab, statementFor, openStatement, closeStatement } = useApp();
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'home', label: t.navHome, icon: '🏠' },
     { id: 'ledger', label: t.navLedger, icon: '📒' },
@@ -79,9 +75,9 @@ function Shell() {
         {ready && tab === 'ledger' && <Ledger />}
         {ready && tab === 'employers' &&
           (statementFor ? (
-            <Statement employerId={statementFor} onBack={() => setStatementFor(null)} />
+            <Statement employerId={statementFor} onBack={closeStatement} />
           ) : (
-            <Employers onStatement={setStatementFor} />
+            <Employers onStatement={openStatement} />
           ))}
         {ready && tab === 'payments' && <Payments />}
         {ready && tab === 'settings' && <Settings />}
@@ -94,10 +90,7 @@ function Shell() {
               key={x.id}
               type="button"
               aria-current={active ? 'page' : undefined}
-              onClick={() => {
-                setTab(x.id);
-                setStatementFor(null);
-              }}
+              onClick={() => setTab(x.id)}
               className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-semibold leading-tight ${
                 active ? 'text-teal-700' : 'text-slate-600 active:bg-slate-100'
               }`}

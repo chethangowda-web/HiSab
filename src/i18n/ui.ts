@@ -76,6 +76,16 @@ export interface UiText {
   loading: string;
   hoursUnit: string;
   statementFor: string;
+  /** "{name}" is replaced with the employer's name. */
+  usualRateOf: string;
+  sendWhatsApp: string;
+  whatsappPreview: string;
+  openWhatsApp: string;
+  rateTitle: string;
+  perDayUnit: string;
+  ratesHelp: string;
+  dailyRateAria: string;
+  commandsTitle: string;
 }
 
 const en: UiText = {
@@ -154,6 +164,15 @@ const en: UiText = {
   loading: 'Loading…',
   hoursUnit: 'h',
   statementFor: 'Statement for',
+  usualRateOf: '{name}’s usual rate',
+  sendWhatsApp: 'Send on WhatsApp',
+  whatsappPreview: 'WhatsApp preview',
+  openWhatsApp: 'Open WhatsApp',
+  rateTitle: 'Usual daily rate',
+  perDayUnit: '/ day',
+  ratesHelp: 'Learned from what you said. Change it here, or say “Ramesh ka rate 750 hai”.',
+  dailyRateAria: 'daily rate',
+  commandsTitle: 'Also by voice',
 };
 
 const hi: UiText = {
@@ -232,6 +251,15 @@ const hi: UiText = {
   loading: 'लोड हो रहा है…',
   hoursUnit: 'घं',
   statementFor: 'स्टेटमेंट',
+  usualRateOf: '{name} का रोज़ का रेट',
+  sendWhatsApp: 'व्हाट्सऐप पर भेजें',
+  whatsappPreview: 'व्हाट्सऐप संदेश',
+  openWhatsApp: 'व्हाट्सऐप खोलें',
+  rateTitle: 'रोज़ का रेट',
+  perDayUnit: '/ दिन',
+  ratesHelp: 'आपकी बातों से सीखा गया। यहाँ बदलें, या बोलें “रमेश का रेट 750 है”।',
+  dailyRateAria: 'रोज़ का रेट',
+  commandsTitle: 'बोलकर यह भी करें',
 };
 
 const kn: UiText = {
@@ -310,6 +338,15 @@ const kn: UiText = {
   loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
   hoursUnit: 'ಗಂ',
   statementFor: 'ಹೇಳಿಕೆ',
+  usualRateOf: '{name} ಅವರ ದಿನದ ರೇಟ್',
+  sendWhatsApp: 'ವಾಟ್ಸಾಪ್‌ನಲ್ಲಿ ಕಳುಹಿಸಿ',
+  whatsappPreview: 'ವಾಟ್ಸಾಪ್ ಸಂದೇಶ',
+  openWhatsApp: 'ವಾಟ್ಸಾಪ್ ತೆರೆಯಿರಿ',
+  rateTitle: 'ದಿನದ ರೇಟ್',
+  perDayUnit: '/ ದಿನ',
+  ratesHelp: 'ನೀವು ಹೇಳಿದ್ದರಿಂದ ಕಲಿತದ್ದು. ಇಲ್ಲಿ ಬದಲಿಸಿ, ಅಥವಾ ಹೇಳಿ “ರಮೇಶ್ ಅವರ ರೇಟ್ 750”.',
+  dailyRateAria: 'ದಿನದ ರೇಟ್',
+  commandsTitle: 'ಧ್ವನಿಯಿಂದ ಇದನ್ನೂ ಮಾಡಿ',
 };
 
 const ALL: Record<Lang, UiText> = { 'en-IN': en, 'hi-IN': hi, 'kn-IN': kn };

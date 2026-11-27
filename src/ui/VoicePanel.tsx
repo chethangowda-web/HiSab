@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { EXAMPLES } from '../i18n/examples';
+import { COMMAND_EXAMPLES, EXAMPLES } from '../i18n/examples';
+import ActionCard from './ActionCard';
 import { useApp } from './AppContext';
 import ConfirmCard from './ConfirmCard';
 import { SAMPLES } from './samples';
-import type { UseDialogue } from './useDialogue';
+import { whatsappUrl, type UseDialogue } from './useDialogue';
 
 /** Pause between scripted demo lines so a viewer can read each reply and the confirm card (no pause under test). */
 const PAUSE_MS = import.meta.env.MODE === 'test' ? 0 : 2200;
@@ -96,10 +97,23 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
         </p>
       )}
 
-      {d.phase === 'CONFIRM' && d.draft && (
+      {d.phase === 'CONFIRM' && (d.draft || d.action) && (
         <div ref={cardRef} className="w-full scroll-mt-4">
-          <ConfirmCard draft={d.draft} onYes={d.yes} onNo={d.no} />
+          {d.action ? <ActionCard action={d.action} onYes={d.yes} onNo={d.no} /> : <ConfirmCard draft={d.draft!} onYes={d.yes} onNo={d.no} />}
         </div>
+      )}
+
+      {d.whatsappText && (
+        <a
+          href={whatsappUrl(d.whatsappText)}
+          target="_blank"
+          rel="noopener"
+          onClick={d.dismissWhatsApp}
+          className="flex h-16 w-full items-center justify-center rounded-2xl bg-[#25d366] text-xl font-bold text-white shadow-lg"
+        >
+          <span aria-hidden="true">📲 </span>
+          {t.openWhatsApp}
+        </a>
       )}
 
       {d.saved && (
@@ -146,6 +160,14 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
               <li key={e} className="flex gap-2 rounded-xl bg-slate-50 px-3 py-2 text-lg">
                 <span aria-hidden="true">💬</span>
                 <span>{e}</span>
+              </li>
+            ))}
+          </ul>
+          <h2 className="mb-2 mt-4 text-base font-bold text-slate-600">{t.commandsTitle}</h2>
+          <ul data-testid="command-chips" className="flex flex-wrap gap-2">
+            {COMMAND_EXAMPLES[lang].map((c, i) => (
+              <li key={c} className="rounded-full bg-teal-50 px-3 py-1.5 text-base text-teal-900 ring-1 ring-teal-200">
+                <span aria-hidden="true">{['📄', '📲', '↩️', '⭐'][i]} </span>“{c}”
               </li>
             ))}
           </ul>
