@@ -3,6 +3,7 @@ import { COMMAND_EXAMPLES, EXAMPLES } from '../i18n/examples';
 import ActionCard from './ActionCard';
 import { useApp } from './AppContext';
 import ConfirmCard from './ConfirmCard';
+import ListeningOverlay from './ListeningOverlay';
 import { SAMPLES } from './samples';
 import { whatsappUrl, type UseDialogue } from './useDialogue';
 
@@ -51,6 +52,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
 
   return (
     <section className="flex flex-col items-center gap-4">
+      {(d.listening || (d.thinking && d.engine === 'wispr')) && <ListeningOverlay d={d} />}
       {!d.supported && (
         <p role="status" className="w-full rounded-2xl bg-amber-100 px-4 py-3 text-center text-amber-900">
           {t.typeBanner}
@@ -99,7 +101,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
 
       {d.phase === 'CONFIRM' && (d.draft || d.action) && (
         <div ref={cardRef} className="w-full scroll-mt-4">
-          {d.action ? <ActionCard action={d.action} onYes={d.yes} onNo={d.no} /> : <ConfirmCard draft={d.draft!} onYes={d.yes} onNo={d.no} />}
+          {d.action ? <ActionCard action={d.action} onYes={d.yes} onNo={d.no} /> : <ConfirmCard draft={d.draft!} clip={d.clip} onYes={d.yes} onNo={d.no} />}
         </div>
       )}
 

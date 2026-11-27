@@ -29,6 +29,12 @@ interface AppState {
   statementFor: string | null;
   openStatement(employerId: string): void;
   closeStatement(): void;
+  /** Keep a clip of the worker's voice with each spoken entry (default on). */
+  keepProof: boolean;
+  setKeepProof(on: boolean): void;
+  /** Use Wispr Flow for speech when the server has it (default on). */
+  useWispr: boolean;
+  setUseWispr(on: boolean): void;
 }
 
 export type Tab = 'home' | 'ledger' | 'employers' | 'payments' | 'settings';
@@ -45,6 +51,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [edgeMode, setEdgeModeState] = useState(false);
   const [tab, setTabState] = useState<Tab>('home');
   const [statementFor, setStatementFor] = useState<string | null>(null);
+  const [keepProof, setKeepProofState] = useState(true);
+  const [useWispr, setUseWisprState] = useState(true);
 
   const setTab = useCallback((t: Tab) => {
     setTabState(t);
@@ -71,11 +79,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         db.settings.get('workerName'),
         db.settings.get('edgeMode'),
       ]);
+      const [kp, uw] = await Promise.all([db.settings.get('keepProof'), db.settings.get('useWispr')]);
       if (!alive) return;
       if (l && isLang(l.value)) setLangState(l.value);
       if (d?.value === true) setDemoModeState(true);
       if (n && typeof n.value === 'string') setWorkerNameState(n.value);
       if (g?.value === true) setEdgeModeState(true);
+      if (kp?.value === false) setKeepProofState(false);
+      if (uw?.value === false) setUseWisprState(false);
       await reload();
       if (alive) setReady(true);
     })();
@@ -92,6 +103,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setWorkerName = useCallback((name: string) => {
     setWorkerNameState(name);
     void db.settings.put({ key: 'workerName', value: name });
+  }, []);
+
+  const setKeepProof = useCallback((on: boolean) => {
+    setKeepProofState(on);
+    void db.settings.put({ key: 'keepProof', value: on });
+  }, []);
+  const setUseWispr = useCallback((on: boolean) => {
+    setUseWisprState(on);
+    void db.settings.put({ key: 'useWispr', value: on });
   }, []);
 
   const setEdgeMode = useCallback((on: boolean) => {
@@ -137,8 +157,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       statementFor,
       openStatement,
       closeStatement,
+      keepProof,
+      setKeepProof,
+      useWispr,
+      setUseWispr,
     }),
-    [lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
+    [keepProof, setKeepProof, useWispr, setUseWispr, lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -3,6 +3,9 @@
 html { font-size: 18px; }
 body { margin: 0; background: #f8fafc; color: #0f172a; font-family: system-ui, sans-serif; }
 
+@keyframes hisab-bar { 0%, 100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
+.wave-bar { animation: hisab-bar 1s ease-in-out infinite; transform-origin: center; }
+
 /* "Save as PDF" prints only the wage statement. */
 @media print {
   body { background: #fff; }

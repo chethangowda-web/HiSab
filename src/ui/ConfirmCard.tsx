@@ -3,6 +3,7 @@ import type { Draft } from '../domain/types';
 import { friendlyDate, typeLabel } from '../i18n/messages';
 import { inr } from '../i18n/ui';
 import { useApp } from './AppContext';
+import ClipButton from './ClipButton';
 import { TYPE_STYLE } from './typeStyle';
 
 export function YesNo({ onYes, onNo, yesLabel, noLabel }: { onYes: () => void; onNo: () => void; yesLabel?: string; noLabel?: string }) {
@@ -30,7 +31,7 @@ export function YesNo({ onYes, onNo, yesLabel, noLabel }: { onYes: () => void; o
 }
 
 /** The entry the app understood, shown big so a worker can check it at a glance before saying yes. */
-export default function ConfirmCard({ draft, onYes, onNo }: { draft: Draft; onYes: () => void; onNo: () => void }) {
+export default function ConfirmCard({ draft, clip, onYes, onNo }: { draft: Draft; clip?: Blob; onYes: () => void; onNo: () => void }) {
   const { t, lang } = useApp();
   if (!draft.type || draft.amount === undefined) return null;
   const style = TYPE_STYLE[draft.type];
@@ -74,6 +75,13 @@ export default function ConfirmCard({ draft, onYes, onNo }: { draft: Draft; onYe
         <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-amber-900">
           <span aria-hidden="true">⭐</span>
           {inr(draft.amount)} = {t.usualRateOf.replace('{name}', draft.employerName ?? '')}
+        </p>
+      )}
+
+      {clip && (
+        <p data-testid="clip-preview" className="mt-3 flex items-center gap-3 rounded-xl bg-sky-50 px-3 py-2 text-sky-900">
+          <ClipButton blob={clip} />
+          <span className="font-semibold">🎙 {t.voiceProof}</span>
         </p>
       )}
 

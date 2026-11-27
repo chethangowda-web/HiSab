@@ -6,6 +6,7 @@ import type { Entry } from '../domain/types';
 import { typeLabel } from '../i18n/messages';
 import { inr } from '../i18n/ui';
 import { useApp } from './AppContext';
+import ClipButton from './ClipButton';
 import { TYPE_STYLE } from './typeStyle';
 
 type Mode = 'view' | 'edit' | 'delete';
@@ -59,6 +60,12 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
           >
             {entry.source === 'employer_confirmed' ? t.employerConfirmed : t.workerRecorded}
           </span>
+          {entry.clipId && (
+            <div className="mt-2 flex items-center gap-2">
+              <ClipButton clipId={entry.clipId} />
+              <span className="whitespace-nowrap rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-900">🎙 {t.voiceProof}</span>
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <p className={`text-xl font-extrabold ${style.amount}`}>{inr(entry.amount)}</p>

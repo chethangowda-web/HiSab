@@ -3,7 +3,7 @@ import type { Lang } from '../domain/types';
 export type ListenError = 'denied' | 'unsupported' | 'no_speech';
 
 interface RecognitionResultEvent {
-  results: ArrayLike<ArrayLike<{ transcript: string; confidence: number }>>;
+  results: ArrayLike<ArrayLike<{ transcript: string; confidence: number }> & { isFinal?: boolean }>;
 }
 interface Recognition {
   lang: string;
@@ -15,6 +15,7 @@ interface Recognition {
   onend: (() => void) | null;
   start(): void;
   stop(): void;
+  abort?(): void;
 }
 type RecognitionCtor = new () => Recognition;
 
@@ -35,29 +36,55 @@ export function isSpeechSupported(): boolean {
  */
 const UNKNOWN_CONFIDENCE = 0.7;
 
-/** Listens for one utterance. Rejects with 'denied', 'unsupported' or 'no_speech'. */
-export function listen(lang: Lang): Promise<{ text: string; confidence: number }> {
+/** The recognition in progress, so Done / Cancel buttons can end it. */
+let current: Recognition | null = null;
+
+/** Done: stop listening now and use what was heard so far. */
+export function stopListening(): void {
+  current?.stop();
+}
+
+/** Cancel: stop listening and throw away what was heard. */
+export function abortListening(): void {
+  if (current?.abort) current.abort();
+  else current?.stop();
+}
+
+/**
+ * Listens for one utterance. Rejects with 'denied', 'unsupported' or 'no_speech'.
+ * With `onInterim`, words are reported live while the user is still speaking.
+ */
+export function listen(lang: Lang, opts: { onInterim?: (text: string) => void } = {}): Promise<{ text: string; confidence: number }> {
   const Ctor = getCtor();
   if (!Ctor) return Promise.reject<never>('unsupported' satisfies ListenError);
 
   return new Promise((resolve, reject) => {
     const rec = new Ctor();
+    current = rec;
     let settled = false;
     const done = (fn: () => void) => {
       if (!settled) {
         settled = true;
+        if (current === rec) current = null;
         fn();
       }
     };
     rec.lang = lang;
-    rec.interimResults = false;
+    rec.interimResults = Boolean(opts.onInterim);
     rec.maxAlternatives = 1;
     rec.continuous = false;
     rec.onresult = (e) => {
-      const alt = e.results[0]?.[0];
-      if (!alt || !alt.transcript.trim()) return done(() => reject('no_speech' satisfies ListenError));
+      const results = Array.from(e.results);
+      const last = results[results.length - 1];
+      const text = results.map((r) => r[0]?.transcript ?? '').join(' ').replace(/\s+/g, ' ').trim();
+      if (last && last.isFinal === false) {
+        opts.onInterim?.(text);
+        return;
+      }
+      const alt = last?.[0];
+      if (!alt || !text) return done(() => reject('no_speech' satisfies ListenError));
       const confidence = alt.confidence > 0 ? alt.confidence : UNKNOWN_CONFIDENCE;
-      done(() => resolve({ text: alt.transcript.trim(), confidence }));
+      done(() => resolve({ text, confidence }));
     };
     rec.onerror = (e) => {
       const denied = e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture';

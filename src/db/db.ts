@@ -6,10 +6,21 @@ export interface SettingRow {
   value: unknown;
 }
 
+/** The worker's own recording behind an entry ("voice proof"). Stored only on this device. */
+export interface Clip {
+  id: string;
+  blob: Blob;
+  mime: string;
+  durationMs: number;
+  createdAt: number;
+  demo?: boolean;
+}
+
 class BoliDB extends Dexie {
   entries!: Table<Entry, string>;
   employers!: Table<Employer, string>;
   settings!: Table<SettingRow, string>;
+  clips!: Table<Clip, string>;
 
   constructor() {
     super('bolihisab');
@@ -17,6 +28,13 @@ class BoliDB extends Dexie {
       entries: 'id, employerId, date',
       employers: 'id, name',
       settings: 'key',
+    });
+    // v2: voice proof clips. Existing rows are kept as they are.
+    this.version(2).stores({
+      entries: 'id, employerId, date, clipId',
+      employers: 'id, name',
+      settings: 'key',
+      clips: 'id',
     });
   }
 }
@@ -58,14 +76,29 @@ export async function updateEntry(id: string, patch: { amount: number; date: str
   await db.entries.update(id, { amount: patch.amount, date: patch.date, source: 'worker' });
 }
 
+/** Deletes an entry, and its voice clip once no other entry (another day of the same sentence) uses it. */
 export async function deleteEntry(id: string): Promise<void> {
+  const entry = await db.entries.get(id);
   await db.entries.delete(id);
+  if (entry?.clipId && (await db.entries.where('clipId').equals(entry.clipId).count()) === 0) {
+    await db.clips.delete(entry.clipId);
+  }
 }
+
+export async function saveClip(blob: Blob, durationMs: number, opts: { demo?: boolean } = {}): Promise<string> {
+  const id = newId();
+  await db.clips.put({ id, blob, mime: blob.type || 'audio/webm', durationMs, createdAt: Date.now(), ...(opts.demo ? { demo: true } : {}) });
+  return id;
+}
+
+export const getClip = (id: string): Promise<Clip | undefined> => db.clips.get(id);
 
 /** Removes only demo-mode rows; real records are never touched. */
 export async function clearDemoData(): Promise<void> {
   const entryIds = await db.entries.filter((e) => e.demo === true).primaryKeys();
   const employerIds = await db.employers.filter((e) => e.demo === true).primaryKeys();
+  const clipIds = await db.clips.filter((c) => c.demo === true).primaryKeys();
   await db.entries.bulkDelete(entryIds);
   await db.employers.bulkDelete(employerIds);
+  await db.clips.bulkDelete(clipIds);
 }

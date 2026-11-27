@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { checkEdge } from '../nlu/llmParser';
+import { wisprConfigured } from '../voice/engine';
 import { LANGUAGES } from '../i18n/ui';
 import { db } from '../db/db';
 import { useApp } from './AppContext';
@@ -53,7 +54,16 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
 }
 
 export default function Settings() {
-  const { t, lang, setLang, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, employers } = useApp();
+  const { t, lang, setLang, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, employers, keepProof, setKeepProof, useWispr, setUseWispr } =
+    useApp();
+  const [wispr, setWispr] = useState<'checking' | 'ok' | 'missing'>('checking');
+  useEffect(() => {
+    let alive = true;
+    void wisprConfigured().then((ok) => alive && setWispr(ok ? 'ok' : 'missing'));
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [edge, setEdge] = useState<EdgeStatus>('idle');
 
   // When the smart helper is on, show whether the local model can actually be reached.
@@ -100,6 +110,25 @@ export default function Settings() {
           autoComplete="name"
           className="h-14 rounded-xl border border-slate-300 px-4 text-xl"
         />
+      </Card>
+
+      <Card title={t.voiceEngineTitle}>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-lg font-bold">▮▮▮ Wispr Flow</p>
+            <p role="status" className={wispr === 'ok' ? 'text-teal-800' : 'text-slate-600'}>
+              {wispr === 'checking' ? t.edgeChecking : wispr === 'ok' ? t.wisprOk : t.wisprMissing}
+            </p>
+          </div>
+          <Switch checked={useWispr} onChange={setUseWispr} label={t.useWisprLabel} />
+        </div>
+      </Card>
+
+      <Card title={t.keepProofTitle}>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-slate-600">{t.keepProofHelp}</p>
+          <Switch checked={keepProof} onChange={setKeepProof} label={t.keepProofTitle} />
+        </div>
       </Card>
 
       {employers.length > 0 && (

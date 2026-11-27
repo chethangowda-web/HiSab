@@ -86,6 +86,21 @@ export interface UiText {
   ratesHelp: string;
   dailyRateAria: string;
   commandsTitle: string;
+  done: string;
+  speakNow: string;
+  understanding: string;
+  voiceByWispr: string;
+  voiceProof: string;
+  playProof: string;
+  stopProof: string;
+  keepProofTitle: string;
+  keepProofHelp: string;
+  voiceEngineTitle: string;
+  useWisprLabel: string;
+  wisprOk: string;
+  wisprMissing: string;
+  wisprFallback: string;
+  browserSpeech: string;
 }
 
 const en: UiText = {
@@ -173,6 +188,21 @@ const en: UiText = {
   ratesHelp: 'Learned from what you said. Change it here, or say “Ramesh ka rate 750 hai”.',
   dailyRateAria: 'daily rate',
   commandsTitle: 'Also by voice',
+  done: 'Done',
+  speakNow: 'Speak now…',
+  understanding: 'Understanding…',
+  voiceByWispr: 'Voice by Wispr Flow',
+  voiceProof: 'Voice proof',
+  playProof: 'Play voice proof',
+  stopProof: 'Stop',
+  keepProofTitle: 'Keep voice proof',
+  keepProofHelp: 'Save a short clip of your own voice with every spoken entry, on this phone only. If there is ever a dispute, play it back.',
+  voiceEngineTitle: 'Voice engine',
+  useWisprLabel: 'Use Wispr Flow',
+  wisprOk: 'Wispr Flow is connected: strong on Hinglish and Indian accents.',
+  wisprMissing: 'Wispr Flow is not set up on this server, so the phone’s own speech recognition is used.',
+  wisprFallback: 'Wispr Flow did not answer. Please say it again.',
+  browserSpeech: 'Phone speech recognition',
 };
 
 const hi: UiText = {
@@ -260,6 +290,21 @@ const hi: UiText = {
   ratesHelp: 'आपकी बातों से सीखा गया। यहाँ बदलें, या बोलें “रमेश का रेट 750 है”।',
   dailyRateAria: 'रोज़ का रेट',
   commandsTitle: 'बोलकर यह भी करें',
+  done: 'हो गया',
+  speakNow: 'अब बोलिए…',
+  understanding: 'समझ रहा हूँ…',
+  voiceByWispr: 'Voice by Wispr Flow',
+  voiceProof: 'आवाज़ का सबूत',
+  playProof: 'आवाज़ सुनें',
+  stopProof: 'रोकें',
+  keepProofTitle: 'आवाज़ का सबूत रखें',
+  keepProofHelp: 'हर बोली गई एंट्री के साथ आपकी आवाज़ की छोटी क्लिप इसी फ़ोन पर रखी जाती है। कभी झगड़ा हो तो उसे चलाकर सुनाइए।',
+  voiceEngineTitle: 'आवाज़ पहचान',
+  useWisprLabel: 'Wispr Flow इस्तेमाल करें',
+  wisprOk: 'Wispr Flow जुड़ा है: हिंग्लिश और भारतीय लहजे में मज़बूत।',
+  wisprMissing: 'इस सर्वर पर Wispr Flow सेट नहीं है, इसलिए फ़ोन की अपनी आवाज़ पहचान इस्तेमाल हो रही है।',
+  wisprFallback: 'Wispr Flow से जवाब नहीं आया। कृपया फिर से बोलिए।',
+  browserSpeech: 'फ़ोन की आवाज़ पहचान',
 };
 
 const kn: UiText = {
@@ -347,6 +392,21 @@ const kn: UiText = {
   ratesHelp: 'ನೀವು ಹೇಳಿದ್ದರಿಂದ ಕಲಿತದ್ದು. ಇಲ್ಲಿ ಬದಲಿಸಿ, ಅಥವಾ ಹೇಳಿ “ರಮೇಶ್ ಅವರ ರೇಟ್ 750”.',
   dailyRateAria: 'ದಿನದ ರೇಟ್',
   commandsTitle: 'ಧ್ವನಿಯಿಂದ ಇದನ್ನೂ ಮಾಡಿ',
+  done: 'ಮುಗಿಯಿತು',
+  speakNow: 'ಈಗ ಮಾತನಾಡಿ…',
+  understanding: 'ಅರ್ಥ ಮಾಡಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ…',
+  voiceByWispr: 'Voice by Wispr Flow',
+  voiceProof: 'ಧ್ವನಿ ಸಾಕ್ಷಿ',
+  playProof: 'ಧ್ವನಿ ಕೇಳಿ',
+  stopProof: 'ನಿಲ್ಲಿಸಿ',
+  keepProofTitle: 'ಧ್ವನಿ ಸಾಕ್ಷಿ ಇಡಿ',
+  keepProofHelp: 'ನೀವು ಹೇಳುವ ಪ್ರತಿ ದಾಖಲೆಯ ಜೊತೆ ನಿಮ್ಮ ಧ್ವನಿಯ ಸಣ್ಣ ಕ್ಲಿಪ್ ಈ ಫೋನ್‌ನಲ್ಲೇ ಉಳಿಯುತ್ತದೆ. ವಾದ ಬಂದರೆ ಅದನ್ನು ಕೇಳಿಸಿ.',
+  voiceEngineTitle: 'ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ',
+  useWisprLabel: 'Wispr Flow ಬಳಸಿ',
+  wisprOk: 'Wispr Flow ಸಂಪರ್ಕವಾಗಿದೆ: ಹಿಂಗ್ಲಿಷ್ ಮತ್ತು ಭಾರತೀಯ ಉಚ್ಚಾರಣೆಯಲ್ಲಿ ಉತ್ತಮ.',
+  wisprMissing: 'ಈ ಸರ್ವರ್‌ನಲ್ಲಿ Wispr Flow ಹೊಂದಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಫೋನ್‌ನ ಸ್ವಂತ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಬಳಸಲಾಗುತ್ತಿದೆ.',
+  wisprFallback: 'Wispr Flow ಉತ್ತರಿಸಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಹೇಳಿ.',
+  browserSpeech: 'ಫೋನ್‌ನ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ',
 };
 
 const ALL: Record<Lang, UiText> = { 'en-IN': en, 'hi-IN': hi, 'kn-IN': kn };
