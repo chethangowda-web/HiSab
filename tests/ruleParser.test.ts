@@ -54,6 +54,13 @@ const cases: Case[] = [
   ['ಇಲ್ಲ', { kind: 'deny' }],
   // ---- Mixed Kannada + English ----
   ['Ramesh avara site alli ಇವತ್ತು 700 rupees kelasa madide', { kind: 'record', type: 'work', employerName: 'Ramesh', amount: 700, date: today }],
+  // ---- Honorifics: the name is the word before "bhai / sir / anna ..." ----
+  ['aaj ka kaam 700 Mahesh bhai ne diya', { kind: 'record', type: 'payment', employerName: 'Mahesh', amount: 700 }],
+  ['ramesh anna kitchen 700 worked today', { kind: 'record', type: 'work', employerName: 'Ramesh', amount: 700, date: today }],
+  ['Ramesh sir gave me some money yesterday', { kind: 'record', type: 'payment', employerName: 'Ramesh', date: '2026-11-26' }],
+  ['Suresh bhaiya ne 500 rupaye diye', { kind: 'record', type: 'payment', employerName: 'Suresh', amount: 500 }],
+  ['सुरेश भाई ने 500 रुपये दिए', { kind: 'record', type: 'payment', employerName: 'सुरेश', amount: 500 }],
+  ['ರಮೇಶ್ ಅಣ್ಣ ಅವರ ಸೈಟ್‌ನಲ್ಲಿ 700 ರೂಪಾಯಿ ಕೆಲಸ ಮಾಡಿದೆ', { kind: 'record', type: 'work', employerName: 'ರಮೇಶ್', amount: 700 }],
   // ---- Not understood ----
   ['hello there', { kind: 'unknown' }],
   ['', { kind: 'unknown' }],
@@ -79,6 +86,14 @@ describe('parseUtterance table', () => {
 });
 
 describe('parseUtterance details', () => {
+  it('an honorific on its own is never the employer', () => {
+    const r = parseUtterance('bhai ne 500 rupaye diye', ctx);
+    expect(r.kind).toBe('record');
+    if (r.kind === 'record') expect(r.draft.employerName).toBeUndefined();
+  });
+  it('"yes sir" is still just a confirmation', () => {
+    expect(parseUtterance('yes sir', ctx).kind).toBe('confirm');
+  });
   it('an advance with no employer asks for one', () => {
     const r = parseUtterance('The contractor gave me 1000 rupees advance', ctx);
     expect(r.kind).toBe('record');

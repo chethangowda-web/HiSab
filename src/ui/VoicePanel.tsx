@@ -62,7 +62,7 @@ export default function VoicePanel() {
           <span aria-hidden="true">🎤</span>
         </button>
       )}
-      {d.supported && <p className="text-slate-600">{d.listening ? t.listening : t.tapToSpeak}</p>}
+      {d.supported && <p className="text-slate-600">{d.thinking ? t.thinking : d.listening ? t.listening : t.tapToSpeak}</p>}
 
       {d.phrase && (
         <p aria-live="polite" className="max-w-md rounded-2xl bg-white p-4 text-center text-xl shadow">

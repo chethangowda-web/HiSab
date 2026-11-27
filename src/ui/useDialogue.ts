@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { addEntry, db, newId } from '../db/db';
 import { localISODate } from '../domain/dates';
-import { initialState, step, type DialogueCtx, type DialogueEvent, type DialogueState, type Phase } from '../voice/dialogue';
+import { parseWithFallback } from '../nlu/llmParser';
+import { CONFIDENCE_MIN, initialState, step, type DialogueCtx, type DialogueEvent, type DialogueState, type Phase } from '../voice/dialogue';
 import { isSpeechSupported, listen } from '../voice/speechInput';
 import { speak } from '../voice/speechOutput';
 import { useApp } from './AppContext';
@@ -11,6 +12,8 @@ export interface DialogueView {
   /** The last thing the app said, shown on screen as well as spoken. */
   phrase: string;
   listening: boolean;
+  /** Waiting for the optional local model. */
+  thinking: boolean;
   /** Voice keeps failing: offer typed input. */
   needTyping: boolean;
   /** Set when the microphone cannot be used at all. */
@@ -34,7 +37,7 @@ export function useDialogue(): UseDialogue {
   const state = useRef<DialogueState>(initialState);
   const mounted = useRef(true);
   const listenRef = useRef<() => Promise<void>>(async () => {});
-  const [view, setView] = useState<DialogueView>({ phase: 'IDLE', phrase: '', listening: false, needTyping: false, micIssue: '' });
+  const [view, setView] = useState<DialogueView>({ phase: 'IDLE', phrase: '', listening: false, thinking: false, needTyping: false, micIssue: '' });
 
   useEffect(() => {
     mounted.current = true;
@@ -44,7 +47,7 @@ export function useDialogue(): UseDialogue {
   }, []);
 
   /** Runs one dialogue turn: step, persist if the user confirmed, speak, and (after voice) keep listening. */
-  const run = useCallback(async (ev: DialogueEvent, viaVoice: boolean) => {
+  const run = useCallback(async (input: DialogueEvent, viaVoice: boolean) => {
     const a = latest.current;
     const ctx: DialogueCtx = {
       today: localISODate(),
@@ -54,6 +57,25 @@ export function useDialogue(): UseDialogue {
       newId,
       now: Date.now,
     };
+    let ev = input;
+    // Edge mode: when the rules cannot fully understand a sentence, a local model may help.
+    // It is never consulted while answering a clarifying question.
+    if (
+      input.type === 'heard' &&
+      a.edgeMode &&
+      input.text.trim() &&
+      input.confidence >= CONFIDENCE_MIN &&
+      state.current.phase !== 'CLARIFY'
+    ) {
+      if (mounted.current) setView((v) => ({ ...v, thinking: true }));
+      const parsed = await parseWithFallback(
+        input.text,
+        { today: ctx.today, employers: a.employers.map((e) => e.name), lang: a.lang },
+        { enabled: true },
+      );
+      ev = { ...input, parsed };
+      if (mounted.current) setView((v) => ({ ...v, thinking: false }));
+    }
     const r = step(state.current, ev, ctx);
     state.current = r.state;
     if (mounted.current) {

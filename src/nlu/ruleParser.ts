@@ -12,8 +12,17 @@ export interface ParseContext {
 const nfc = (s: string) => s.normalize('NFC');
 const set = (words: string[]) => new Set(words.map(nfc));
 
+// Polite words said after a name ("Ramesh anna", "Mahesh bhai", "रमेश भाई"). Never a name themselves;
+// the word before one IS the name.
+const HONORIFICS = set([
+  'sir', 'anna', 'bhai', 'bhaiya', 'bhaiyya', 'bhaiyaa', 'sahab', 'saheb', 'sahib', 'ji', 'madam', 'ayya', 'akka', 'aunty', 'uncle',
+  'सर', 'भाई', 'भैया', 'साहब', 'साहेब', 'जी',
+  'ಸರ್', 'ಅಣ್ಣ', 'ಅಯ್ಯ', 'ಸಾಹೇಬ್', 'ಅಕ್ಕ',
+]);
+
 // ---- words that are never an employer name ----
 const NOT_A_NAME = set([
+  ...HONORIFICS,
   'the', 'a', 'an', 'my', 'me', 'i', 'you', 'he', 'she', 'they', 'we', 'it', 'is', 'are', 'was', 'were', 'and', 'or', 'of', 'in', 'on',
   'at', 'for', 'from', 'to', 'with', 'by', 'this', 'that', 'how', 'much', 'many', 'what', 'when', 'tell', 'show', 'still', 'not', 'did',
   'do', 'does', 'have', 'has', 'had', 'worked', 'work', 'gave', 'give', 'paid', 'pay', 'got', 'received', 'took', 'owe', 'owes',
@@ -35,7 +44,7 @@ const NAME_MARKERS = set([
   'ಅವರ', 'ಅವರು', 'ಅವರಿಗೆ', 'ಅವರಿಂದ', 'ಬಳಿ', 'ಹತ್ತಿರ', 'ಕಡೆ',
 ]);
 
-const isNameToken = (raw: string): boolean => {
+export const isNameToken = (raw: string): boolean => {
   const t = raw.replace(/['’]s$/, '');
   return (
     t.length >= 2 &&
@@ -46,7 +55,7 @@ const isNameToken = (raw: string): boolean => {
   );
 };
 
-const display = (t: string) => {
+export const display = (t: string) => {
   const clean = t.replace(/['’]s$/, '');
   return /^[a-z]/.test(clean) ? clean[0].toUpperCase() + clean.slice(1) : clean;
 };
@@ -89,6 +98,10 @@ const EN_PATTERNS: RegExp[] = [
 function extractEmployer(tokens: string[], known: string[]): string | undefined {
   const fromKnown = matchKnown(tokens, known);
   if (fromKnown) return fromKnown;
+  // "Mahesh bhai", "Ramesh sir", "ರಮೇಶ್ ಅಣ್ಣ": the word before an honorific is the name.
+  for (let i = 1; i < tokens.length; i++) {
+    if (HONORIFICS.has(tokens[i]) && isNameToken(tokens[i - 1])) return display(tokens[i - 1]);
+  }
   const joined = tokens.join(' ');
   for (const re of EN_PATTERNS) {
     for (const m of joined.matchAll(re)) {

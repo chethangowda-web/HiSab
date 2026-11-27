@@ -19,6 +19,9 @@ interface AppState {
   setDemoMode(on: boolean): Promise<void>;
   workerName: string;
   setWorkerName(name: string): void;
+  /** Optional local AI model helps with sentences the rules cannot understand. */
+  edgeMode: boolean;
+  setEdgeMode(on: boolean): void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -30,6 +33,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [demoMode, setDemoModeState] = useState(false);
   const [workerName, setWorkerNameState] = useState('');
   const [ready, setReady] = useState(false);
+  const [edgeMode, setEdgeModeState] = useState(false);
 
   const reload = useCallback(async () => {
     const [e, m] = await Promise.all([listEntries(), listEmployers()]);
@@ -40,11 +44,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [l, d, n] = await Promise.all([db.settings.get('language'), db.settings.get('demoMode'), db.settings.get('workerName')]);
+      const [l, d, n, g] = await Promise.all([
+        db.settings.get('language'),
+        db.settings.get('demoMode'),
+        db.settings.get('workerName'),
+        db.settings.get('edgeMode'),
+      ]);
       if (!alive) return;
       if (l && isLang(l.value)) setLangState(l.value);
       if (d?.value === true) setDemoModeState(true);
       if (n && typeof n.value === 'string') setWorkerNameState(n.value);
+      if (g?.value === true) setEdgeModeState(true);
       await reload();
       if (alive) setReady(true);
     })();
@@ -61,6 +71,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setWorkerName = useCallback((name: string) => {
     setWorkerNameState(name);
     void db.settings.put({ key: 'workerName', value: name });
+  }, []);
+
+  const setEdgeMode = useCallback((on: boolean) => {
+    setEdgeModeState(on);
+    void db.settings.put({ key: 'edgeMode', value: on });
   }, []);
 
   const setDemoMode = useCallback(
@@ -94,8 +109,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setDemoMode,
       workerName,
       setWorkerName,
+      edgeMode,
+      setEdgeMode,
     }),
-    [lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName],
+    [lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

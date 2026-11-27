@@ -1,4 +1,4 @@
-import type { Draft, Employer, Entry, Lang } from '../domain/types';
+import type { Draft, Employer, Entry, Intent, Lang } from '../domain/types';
 import { answerQuery, matchEmployers } from '../domain/queries';
 import { messages, type Field } from '../i18n/messages';
 import { NO_WORDS, YES_WORDS } from '../nlu/lexicon';
@@ -20,7 +20,8 @@ export interface DialogueState {
 export const initialState: DialogueState = { phase: 'IDLE', retries: 0 };
 
 export type DialogueEvent =
-  | { type: 'heard'; text: string; confidence: number }
+  /** `parsed`, when given, replaces the rule parser's reading of `text` (used by optional edge mode). */
+  | { type: 'heard'; text: string; confidence: number; parsed?: Intent }
   | { type: 'tap_yes' }
   | { type: 'tap_no' }
   | { type: 'reset' };
@@ -84,13 +85,15 @@ function proceed(draft: Draft, ctx: DialogueCtx, prefix = ''): StepResult {
   return { state: { phase: 'CONFIRM', draft: d, retries: 0 }, speak: prefix + m.readBack(d, ctx.today) };
 }
 
-function handleFresh(text: string, ctx: DialogueCtx): StepResult {
+function handleFresh(text: string, ctx: DialogueCtx, parsed?: Intent): StepResult {
   const m = messages(ctx.lang);
-  const intent = parseUtterance(text, {
-    today: ctx.today,
-    employers: ctx.employers.map((e) => e.name),
-    lang: ctx.lang,
-  });
+  const intent =
+    parsed ??
+    parseUtterance(text, {
+      today: ctx.today,
+      employers: ctx.employers.map((e) => e.name),
+      lang: ctx.lang,
+    });
 
   if (intent.kind === 'query') {
     const result = answerQuery(intent, ctx.entries, ctx.employers, ctx.today);
@@ -193,16 +196,18 @@ function commit(state: DialogueState, ctx: DialogueCtx): StepResult {
   return { state: { phase: 'SAVED', retries: 0 }, speak: m.saved, save, newEmployer };
 }
 
-function handleConfirm(state: DialogueState, text: string, ctx: DialogueCtx): StepResult {
+function handleConfirm(state: DialogueState, text: string, ctx: DialogueCtx, parsed?: Intent): StepResult {
   const m = messages(ctx.lang);
   const draft = state.draft!;
   const again = (prefix = ''): StepResult => ({ state: { ...state, retries: 0 }, speak: prefix + m.readBack(draft, ctx.today) });
 
-  const intent = parseUtterance(text, {
-    today: ctx.today,
-    employers: ctx.employers.map((e) => e.name),
-    lang: ctx.lang,
-  });
+  const intent =
+    parsed ??
+    parseUtterance(text, {
+      today: ctx.today,
+      employers: ctx.employers.map((e) => e.name),
+      lang: ctx.lang,
+    });
 
   switch (intent.kind) {
     case 'confirm':
@@ -215,7 +220,7 @@ function handleConfirm(state: DialogueState, text: string, ctx: DialogueCtx): St
       return { state: { phase: 'CONFIRM', draft: corrected, retries: 0 }, speak: m.readBack(corrected, ctx.today) };
     }
     case 'record':
-      return handleFresh(text, ctx);
+      return handleFresh(text, ctx, intent);
     default:
       return again();
   }
@@ -247,9 +252,9 @@ export function step(state: DialogueState, ev: DialogueEvent, ctx: DialogueCtx):
         case 'CLARIFY':
           return handleClarify(good, ev.text, ctx);
         case 'CONFIRM':
-          return handleConfirm(good, ev.text, ctx);
+          return handleConfirm(good, ev.text, ctx, ev.parsed);
         default:
-          return handleFresh(ev.text, ctx);
+          return handleFresh(ev.text, ctx, ev.parsed);
       }
     }
   }

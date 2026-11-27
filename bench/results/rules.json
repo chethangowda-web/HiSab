@@ -1,0 +1,665 @@
+{
+  "model": "rules",
+  "date": "2026-11-27",
+  "summary": {
+    "n": 43,
+    "kindAccuracy": 0.9767441860465116,
+    "typeAccuracy": 0.9615384615384616,
+    "employerAccuracy": 0.8620689655172413,
+    "amountAccuracy": 1,
+    "hoursAccuracy": 1,
+    "hallucinatedAmounts": 0,
+    "inventedEmployers": 0,
+    "inventedHours": 0,
+    "parseFailures": 0,
+    "avgMs": 0,
+    "hardKindAccuracy": 0.9166666666666666
+  },
+  "cases": [
+    {
+      "text": "I worked at Ramesh's construction site today for 700 rupees",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "ms": 4
+    },
+    {
+      "text": "I worked at Suresh site yesterday for 800 rupees",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Suresh",
+        "amount": 800
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Suresh",
+        "amount": 800
+      },
+      "ms": 3
+    },
+    {
+      "text": "worked for Mahesh today 650",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Mahesh",
+        "amount": 650
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Mahesh",
+        "amount": 650
+      },
+      "ms": 0
+    },
+    {
+      "text": "I worked two extra hours yesterday",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "overtime",
+        "hours": 2
+      },
+      "pred": {
+        "kind": "record",
+        "type": "overtime",
+        "hours": 2
+      },
+      "ms": 1
+    },
+    {
+      "text": "I did 3 hours overtime at Ramesh today",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "overtime",
+        "employerName": "Ramesh",
+        "hours": 3
+      },
+      "pred": {
+        "kind": "record",
+        "type": "overtime",
+        "employerName": "Ramesh",
+        "hours": 3
+      },
+      "ms": 0
+    },
+    {
+      "text": "The contractor gave me 1000 rupees advance",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "advance",
+        "amount": 1000
+      },
+      "pred": {
+        "kind": "record",
+        "type": "advance",
+        "amount": 1000
+      },
+      "ms": 0
+    },
+    {
+      "text": "Ramesh gave me 1,000 rupees advance",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "advance",
+        "employerName": "Ramesh",
+        "amount": 1000
+      },
+      "pred": {
+        "kind": "record",
+        "type": "advance",
+        "employerName": "Ramesh",
+        "amount": 1000
+      },
+      "ms": 0
+    },
+    {
+      "text": "I received 500 rupees from Ramesh",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Ramesh",
+        "amount": 500
+      },
+      "pred": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Ramesh",
+        "amount": 500
+      },
+      "ms": 0
+    },
+    {
+      "text": "Suresh paid me seven hundred rupees today",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Suresh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Suresh",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "paid 1500 by Suresh today",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Suresh",
+        "amount": 1500
+      },
+      "pred": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Suresh",
+        "amount": 1500
+      },
+      "ms": 0
+    },
+    {
+      "text": "How much does Ramesh still owe me?",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "ms": 0
+    },
+    {
+      "text": "How much have I earned this month?",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "earned"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "earned"
+      },
+      "ms": 0
+    },
+    {
+      "text": "How many days did I work at Ramesh",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "days",
+        "employerName": "Ramesh"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "days",
+        "employerName": "Ramesh"
+      },
+      "ms": 0
+    },
+    {
+      "text": "How much advance have I taken",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "advances"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "advances"
+      },
+      "ms": 0
+    },
+    {
+      "text": "yes",
+      "hard": false,
+      "gold": {
+        "kind": "confirm"
+      },
+      "pred": {
+        "kind": "confirm"
+      },
+      "ms": 0
+    },
+    {
+      "text": "no",
+      "hard": false,
+      "gold": {
+        "kind": "deny"
+      },
+      "pred": {
+        "kind": "deny"
+      },
+      "ms": 0
+    },
+    {
+      "text": "Aaj Ramesh ke site pe 700 rupaye kaam kiya",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "Kal Suresh ke yahan saat sau rupaye kaam kiya",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Suresh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Suresh",
+        "amount": 700
+      },
+      "ms": 1
+    },
+    {
+      "text": "Ramesh ne mujhe ek hazaar rupaye advance diye",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "advance",
+        "employerName": "Ramesh",
+        "amount": 1000
+      },
+      "pred": {
+        "kind": "record",
+        "type": "advance",
+        "employerName": "Ramesh",
+        "amount": 1000
+      },
+      "ms": 0
+    },
+    {
+      "text": "Ramesh ne 500 rupaye diye",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Ramesh",
+        "amount": 500
+      },
+      "pred": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Ramesh",
+        "amount": 500
+      },
+      "ms": 0
+    },
+    {
+      "text": "Maine aaj do ghante extra kaam kiya",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "overtime",
+        "hours": 2
+      },
+      "pred": {
+        "kind": "record",
+        "type": "overtime",
+        "hours": 2
+      },
+      "ms": 0
+    },
+    {
+      "text": "Ramesh ne kitna dena hai?",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "ms": 0
+    },
+    {
+      "text": "Mujhe Ramesh se kitna lena hai",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "ms": 0
+    },
+    {
+      "text": "haan",
+      "hard": false,
+      "gold": {
+        "kind": "confirm"
+      },
+      "pred": {
+        "kind": "confirm"
+      },
+      "ms": 0
+    },
+    {
+      "text": "आज रमेश के साइट पर सात सौ रुपये काम किया",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "रमेश",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "रमेश",
+        "amount": 700
+      },
+      "ms": 2
+    },
+    {
+      "text": "रमेश ने कितना देना है?",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "रमेश"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "रमेश"
+      },
+      "ms": 0
+    },
+    {
+      "text": "ಇವತ್ತು ರಮೇಶ್ ಅವರ ಸೈಟ್‌ನಲ್ಲಿ ಏಳುನೂರು ರೂಪಾಯಿ ಕೆಲಸ ಮಾಡಿದೆ",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "ರಮೇಶ್",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "ರಮೇಶ್",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "ಮಹೇಶ್ ಅವರಿಂದ ಐನೂರು ರೂಪಾಯಿ ಮುಂಗಡ ತೆಗೆದುಕೊಂಡೆ",
+      "hard": false,
+      "gold": {
+        "kind": "record",
+        "type": "advance",
+        "employerName": "ಮಹೇಶ್",
+        "amount": 500
+      },
+      "pred": {
+        "kind": "record",
+        "type": "advance",
+        "employerName": "ಮಹೇಶ್",
+        "amount": 500
+      },
+      "ms": 0
+    },
+    {
+      "text": "ರಮೇಶ್ ಅವರು ನನಗೆ ಎಷ್ಟು ಕೊಡಬೇಕು?",
+      "hard": false,
+      "gold": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "ರಮೇಶ್"
+      },
+      "pred": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "ರಮೇಶ್"
+      },
+      "ms": 0
+    },
+    {
+      "text": "ಹೌದು",
+      "hard": false,
+      "gold": {
+        "kind": "confirm"
+      },
+      "pred": {
+        "kind": "confirm"
+      },
+      "ms": 0
+    },
+    {
+      "text": "ramesh anna kitchen 700 worked today",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "kitchen ramesh 700 worked today",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "work",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "work",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "Suresh sir nanage 500 kottaru",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Suresh",
+        "amount": 500
+      },
+      "pred": {
+        "kind": "record",
+        "employerName": "Suresh",
+        "amount": 500
+      },
+      "ms": 0
+    },
+    {
+      "text": "aaj ka kaam 700 Mahesh bhai ne diya",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Mahesh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Mahesh",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "tell me Ramesh balance",
+      "hard": true,
+      "gold": {
+        "kind": "query",
+        "q": "owed",
+        "employerName": "Ramesh"
+      },
+      "pred": {
+        "kind": "unknown"
+      },
+      "ms": 0
+    },
+    {
+      "text": "extra three hours Ramesh site yesterday",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "overtime",
+        "employerName": "Ramesh",
+        "hours": 3
+      },
+      "pred": {
+        "kind": "record",
+        "type": "overtime",
+        "hours": 3
+      },
+      "ms": 0
+    },
+    {
+      "text": "ek hazaar advance mila contractor se",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "advance",
+        "amount": 1000
+      },
+      "pred": {
+        "kind": "record",
+        "type": "advance",
+        "amount": 1000
+      },
+      "ms": 0
+    },
+    {
+      "text": "Ramesh 700",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "employerName": "Ramesh",
+        "amount": 700
+      },
+      "pred": {
+        "kind": "record",
+        "amount": 700
+      },
+      "ms": 0
+    },
+    {
+      "text": "Ramesh sir gave me some money yesterday",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Ramesh"
+      },
+      "pred": {
+        "kind": "record",
+        "type": "payment",
+        "employerName": "Ramesh"
+      },
+      "ms": 0
+    },
+    {
+      "text": "he made me work extra yesterday",
+      "hard": true,
+      "gold": {
+        "kind": "record",
+        "type": "overtime"
+      },
+      "pred": {
+        "kind": "record",
+        "type": "overtime"
+      },
+      "ms": 0
+    },
+    {
+      "text": "I earned nothing",
+      "hard": true,
+      "gold": {
+        "kind": "unknown"
+      },
+      "pred": {
+        "kind": "unknown"
+      },
+      "ms": 0
+    },
+    {
+      "text": "worked 700 and advance 200",
+      "hard": true,
+      "gold": {
+        "kind": "unknown"
+      },
+      "pred": {
+        "kind": "unknown"
+      },
+      "ms": 0
+    },
+    {
+      "text": "weather kaisa hai",
+      "hard": false,
+      "gold": {
+        "kind": "unknown"
+      },
+      "pred": {
+        "kind": "unknown"
+      },
+      "ms": 0
+    }
+  ]
+}

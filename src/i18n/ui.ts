@@ -58,6 +58,12 @@ export interface UiText {
   colType: string;
   colAmount: string;
   colRecordedBy: string;
+  edgeLabel: string;
+  edgeHelp: string;
+  edgeChecking: string;
+  edgeOk: string;
+  edgeDown: string;
+  thinking: string;
 }
 
 const en: UiText = {
@@ -118,6 +124,12 @@ const en: UiText = {
   colType: 'Type',
   colAmount: 'Amount',
   colRecordedBy: 'Recorded by',
+  edgeLabel: 'Smart helper (local AI)',
+  edgeHelp: 'Uses a small AI model on your own computer to understand tricky sentences. Optional: everything works without it.',
+  edgeChecking: 'Checking…',
+  edgeOk: 'Connected to the local model.',
+  edgeDown: 'Not connected. The app still works without it. To start it, run: npm run edge',
+  thinking: 'Thinking…',
 };
 
 const hi: UiText = {
@@ -178,6 +190,12 @@ const hi: UiText = {
   colType: 'प्रकार',
   colAmount: 'रकम',
   colRecordedBy: 'किसने दर्ज किया',
+  edgeLabel: 'स्मार्ट सहायक (लोकल AI)',
+  edgeHelp: 'मुश्किल वाक्य समझने के लिए आपके अपने कंप्यूटर पर एक छोटा AI मॉडल इस्तेमाल करता है। वैकल्पिक: इसके बिना भी सब चलता है।',
+  edgeChecking: 'जाँच रहा हूँ…',
+  edgeOk: 'लोकल मॉडल से जुड़ गया।',
+  edgeDown: 'जुड़ा नहीं है। इसके बिना भी ऐप चलता है। शुरू करने के लिए चलाएँ: npm run edge',
+  thinking: 'सोच रहा हूँ…',
 };
 
 const kn: UiText = {
@@ -238,6 +256,12 @@ const kn: UiText = {
   colType: 'ಬಗೆ',
   colAmount: 'ಮೊತ್ತ',
   colRecordedBy: 'ದಾಖಲಿಸಿದವರು',
+  edgeLabel: 'ಸ್ಮಾರ್ಟ್ ಸಹಾಯಕ (ಲೋಕಲ್ AI)',
+  edgeHelp: 'ಕಷ್ಟದ ವಾಕ್ಯಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ನಿಮ್ಮದೇ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ಸಣ್ಣ AI ಮಾದರಿ ಬಳಸುತ್ತದೆ. ಐಚ್ಛಿಕ: ಇಲ್ಲದಿದ್ದರೂ ಎಲ್ಲವೂ ಕೆಲಸ ಮಾಡುತ್ತದೆ.',
+  edgeChecking: 'ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇನೆ…',
+  edgeOk: 'ಲೋಕಲ್ ಮಾದರಿಗೆ ಸಂಪರ್ಕವಾಗಿದೆ.',
+  edgeDown: 'ಸಂಪರ್ಕವಾಗಿಲ್ಲ. ಇಲ್ಲದಿದ್ದರೂ ಆಪ್ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಪ್ರಾರಂಭಿಸಲು ಚಲಾಯಿಸಿ: npm run edge',
+  thinking: 'ಯೋಚಿಸುತ್ತಿದ್ದೇನೆ…',
 };
 
 const ALL: Record<Lang, UiText> = { 'en-IN': en, 'hi-IN': hi, 'kn-IN': kn };
