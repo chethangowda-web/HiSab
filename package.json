@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "server": "tsx server/index.ts",
     "edge": "tsx server/index.ts",
     "bench": "tsx bench/run.ts"
   },

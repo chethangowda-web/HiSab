@@ -5,6 +5,7 @@ import { LANGUAGES } from '../i18n/ui';
 import { db } from '../db/db';
 import { useApp } from './AppContext';
 import Avatar from './Avatar';
+import WisprMark from './WisprMark';
 import Switch from './Switch';
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
@@ -35,9 +36,11 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
     }
   };
   return (
-    <li className="flex items-center gap-3">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <Avatar name={name} size="h-10 w-10 text-lg" />
-      <span className="min-w-0 flex-1 break-words text-lg font-semibold">{name}</span>
+      <span className="min-w-[7rem] flex-1 text-lg font-semibold">{name}</span>
+      {/* wraps to its own line on narrow screens instead of squeezing the name */}
+      <span className="ml-auto flex items-center gap-2">
       <span className="text-lg text-slate-500">₹</span>
       <input
         aria-label={`${name} ${t.dailyRateAria}`}
@@ -49,6 +52,7 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
         className="h-12 w-24 rounded-xl border border-slate-300 px-3 text-right text-xl"
       />
       <span className="text-slate-500">{t.perDayUnit}</span>
+      </span>
     </li>
   );
 }
@@ -115,7 +119,9 @@ export default function Settings() {
       <Card title={t.voiceEngineTitle}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-lg font-bold">▮▮▮ Wispr Flow</p>
+            <p className="flex items-center gap-2 text-lg font-bold">
+              <WisprMark /> Wispr Flow
+            </p>
             <p role="status" className={wispr === 'ok' ? 'text-teal-800' : 'text-slate-600'}>
               {wispr === 'checking' ? t.edgeChecking : wispr === 'ok' ? t.wisprOk : t.wisprMissing}
             </p>

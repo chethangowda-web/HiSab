@@ -1,5 +1,6 @@
 import { useApp } from './AppContext';
 import type { UseDialogue } from './useDialogue';
+import WisprMark from './WisprMark';
 
 const BARS = [0.45, 0.75, 1, 0.65, 0.9, 0.55, 1, 0.7, 0.5];
 
@@ -28,7 +29,9 @@ export default function ListeningOverlay({ d }: { d: UseDialogue }) {
   const status = d.thinking ? t.understanding : d.interim ? '' : t.speakNow;
   const engineBadge =
     d.engine === 'wispr' ? (
-      <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">▮▮▮ {t.voiceByWispr}</span>
+      <span className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+        <WisprMark /> {t.voiceByWispr}
+      </span>
     ) : (
       <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">🎙 {t.browserSpeech}</span>
     );
