@@ -1,7 +1,7 @@
 import type { EntryType, QueryKind } from '../src/domain/types';
 
 export interface Pred {
-  kind: 'record' | 'query' | 'confirm' | 'deny' | 'unknown' | 'repeat';
+  kind: 'record' | 'query' | 'command' | 'confirm' | 'deny' | 'unknown' | 'repeat';
   type?: EntryType;
   employerName?: string;
   amount?: number;

@@ -168,6 +168,22 @@ export function parseHours(text: string): number | null {
   return r ? r.value : null;
 }
 
+export const MAX_DAYS = 31;
+
+/** A count of days of work ("3 din", "teen din", "ಮೂರು ದಿನ"), 2..31; otherwise null. */
+export function parseDays(text: string): number | null {
+  const { tokens, runs } = runsOf(text);
+  const r = runs.find((x) => followedBy(tokens, x.end, DAY_WORDS));
+  if (!r || !Number.isInteger(r.value) || r.value < 2 || r.value > MAX_DAYS) return null;
+  return r.value;
+}
+
+/** The spoken amount is per day: "700 roz", "700 per day", "ಪ್ರತಿದಿನ 700", "दिन का 700". */
+export function isPerDay(text: string): boolean {
+  const s = text.normalize('NFC').toLowerCase();
+  return /\broz\b|\brozana\b|\bper day\b|\ba day\b|\bdaily\b|\beach day\b|\bdin ka\b|रोज़|रोज(?=\s|$)|प्रति ?दिन|दिन का(?=\s|$)|ಪ್ರತಿದಿನ|ದಿನಕ್ಕೆ/.test(s);
+}
+
 /** Every number in the text, including hours and days (used by the hallucination guard). */
 export function allNumbers(text: string): number[] {
   return runsOf(text).runs.map((r) => Math.round(r.value));

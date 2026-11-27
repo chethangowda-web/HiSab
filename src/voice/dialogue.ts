@@ -1,16 +1,27 @@
 import type { Draft, Employer, Entry, Intent, Lang } from '../domain/types';
+import { lastNDays } from '../domain/dates';
+import { balance } from '../domain/ledger';
 import { answerQuery, matchEmployers } from '../domain/queries';
-import { messages, type Field } from '../i18n/messages';
+import { commandMessages } from '../i18n/commands';
+import { entryLabel, messages, type Field } from '../i18n/messages';
 import { NO_WORDS, YES_WORDS } from '../nlu/lexicon';
-import { parseNumber, tokenize } from '../nlu/normalize';
+import { allNumbers, parseNumber, tokenize } from '../nlu/normalize';
 import { missingFields, parseUtterance, typeOf } from '../nlu/ruleParser';
 import { validateDraft } from '../nlu/validate';
 
 export type Phase = 'IDLE' | 'CLARIFY' | 'CONFIRM' | 'SAVED';
 
+/** A spoken command waiting for yes/no. `question` is repeated if the answer is unclear. */
+export type PendingAction =
+  | { kind: 'delete'; entryId: string; question: string }
+  | { kind: 'rate'; employerId: string; name: string; rate: number; question: string }
+  | { kind: 'remind'; employerId: string; text: string; question: string };
+
 export interface DialogueState {
   phase: Phase;
   draft?: Draft;
+  /** In CONFIRM: a command waiting for yes/no instead of an entry. */
+  action?: PendingAction;
   /** The field a CLARIFY question is waiting for. */
   asking?: Field;
   /** Consecutive "not heard" turns. */
@@ -33,22 +44,37 @@ export interface DialogueCtx {
   entries: Entry[];
   newId: () => string;
   now: () => number;
+  /** Used to sign reminder messages. */
+  workerName?: string;
 }
 
 export interface StepResult {
   state: DialogueState;
   /** What to say out loud (and show). */
   speak?: string;
-  /** Set only when the user has explicitly confirmed. The caller persists it. */
+  /** The first saved entry (kept for single-entry callers); see `saves` for all of them. */
   save?: Entry;
-  /** An employer created by this save; persist it before the entry. */
+  /** Every entry to save, set only after an explicit yes. Several for "3 din". */
+  saves?: Entry[];
+  /** An employer created by this save; persist it before the entries. */
   newEmployer?: Employer;
+  /** Store a daily rate on an employer (learned, or set by voice after a yes). */
+  updateEmployer?: { id: string; dailyRate: number };
+  /** Delete this entry (after a yes). */
+  deleteEntryId?: string;
+  /** Open this employer's statement. */
+  navigate?: { employerId: string };
+  /** A reminder message to preview while waiting for yes/no. */
+  reminder?: { employerId: string; text: string };
+  /** Open WhatsApp with this text (after a yes). */
+  openWhatsApp?: string;
   /** The UI should offer typed input. */
   needTyping?: boolean;
 }
 
 export const CONFIDENCE_MIN = 0.6;
 const MAX_VOICE_RETRIES = 2;
+const AMOUNT_MAX = 100000;
 
 type Resolved =
   | { kind: 'existing'; employer: Employer }
@@ -67,22 +93,94 @@ const withTranscript = (d: Draft, text: string): Draft => ({
   rawTranscript: d.rawTranscript ? `${d.rawTranscript} | ${text}` : text,
 });
 
+const isMultiDay = (d: Draft) => (d.days ?? 0) > 1;
+
 /** Decides whether to ask another question or read the draft back for confirmation. */
 function proceed(draft: Draft, ctx: DialogueCtx, prefix = ''): StepResult {
   const m = messages(ctx.lang);
+  const cm = commandMessages(ctx.lang);
   let d = draft;
+  let employer: Employer | undefined;
   if (d.employerName) {
     const r = resolveEmployer(d.employerName, ctx.employers);
     if (r.kind === 'ambiguous') {
       return { state: { phase: 'CLARIFY', draft: d, asking: 'employer', retries: 0 }, speak: prefix + m.which(r.names) };
     }
-    if (r.kind === 'existing') d = { ...d, employerName: r.employer.name };
+    if (r.kind === 'existing') {
+      employer = r.employer;
+      d = { ...d, employerName: r.employer.name };
+    }
   }
+
+  // Work with no amount said: use this employer's usual daily rate (clearly labelled in the read-back).
+  if (d.type === 'work' && d.amount === undefined && employer?.dailyRate) {
+    d = { ...d, amount: employer.dailyRate, amountFrom: 'rate', ...(isMultiDay(d) ? { perDay: true } : {}) };
+  }
+
+  // Several days: a spoken total is split evenly; if it does not split, ask the per-day amount.
+  if (isMultiDay(d) && d.amount !== undefined && !d.perDay) {
+    if (d.amount % d.days! === 0) d = { ...d, amount: d.amount / d.days!, perDay: true };
+    else {
+      return {
+        state: { phase: 'CLARIFY', draft: { ...d, amount: undefined, perDay: true }, asking: 'amount', retries: 0 },
+        speak: prefix + cm.askPerDay,
+      };
+    }
+  }
+
   const missing = missingFields(d);
   if (missing.length > 0) {
-    return { state: { phase: 'CLARIFY', draft: d, asking: missing[0], retries: 0 }, speak: prefix + m.clarify(missing[0]) };
+    const perDayQuestion = missing[0] === 'amount' && isMultiDay(d);
+    return {
+      state: { phase: 'CLARIFY', draft: perDayQuestion ? { ...d, perDay: true } : d, asking: missing[0], retries: 0 },
+      speak: prefix + (perDayQuestion ? cm.askPerDay : m.clarify(missing[0])),
+    };
   }
   return { state: { phase: 'CONFIRM', draft: d, retries: 0 }, speak: prefix + m.readBack(d, ctx.today) };
+}
+
+function handleCommand(intent: Extract<Intent, { kind: 'command' }>, ctx: DialogueCtx): StepResult {
+  const m = messages(ctx.lang);
+  const cm = commandMessages(ctx.lang);
+
+  if (intent.cmd === 'undo') {
+    const last = [...ctx.entries].sort((a, b) => b.createdAt - a.createdAt)[0];
+    if (!last) return { state: initialState, speak: cm.nothingToUndo };
+    const name = ctx.employers.find((e) => e.id === last.employerId)?.name ?? '';
+    const question = cm.confirmDelete(entryLabel(ctx.lang, last, name, ctx.today));
+    return { state: { phase: 'CONFIRM', retries: 0, action: { kind: 'delete', entryId: last.id, question } }, speak: question };
+  }
+
+  if (!intent.employerName) return { state: initialState, speak: cm.sayName };
+  const found = matchEmployers(intent.employerName, ctx.employers);
+  if (found.length === 0) return { state: initialState, speak: m.answer({ key: 'unknown_employer', employerName: intent.employerName }) };
+  if (found.length > 1) return { state: initialState, speak: m.answer({ key: 'ambiguous_employer', employerName: intent.employerName }) };
+  const emp = found[0];
+
+  switch (intent.cmd) {
+    case 'statement':
+      return { state: initialState, speak: cm.openingStatement(emp.name), navigate: { employerId: emp.id } };
+    case 'remind': {
+      const owed = balance(ctx.entries, emp.id);
+      if (owed <= 0) return { state: initialState, speak: cm.nothingToRemind(emp.name) };
+      const text = cm.reminderText(emp.name, owed, ctx.workerName);
+      const question = cm.confirmRemind(emp.name, owed);
+      return {
+        state: { phase: 'CONFIRM', retries: 0, action: { kind: 'remind', employerId: emp.id, text, question } },
+        speak: question,
+        reminder: { employerId: emp.id, text },
+      };
+    }
+    case 'set_rate': {
+      const rate = intent.amount;
+      if (rate === undefined || !Number.isInteger(rate) || rate <= 0 || rate >= AMOUNT_MAX) return { state: initialState, speak: cm.badRate };
+      const question = cm.confirmRate(emp.name, rate);
+      return {
+        state: { phase: 'CONFIRM', retries: 0, action: { kind: 'rate', employerId: emp.id, name: emp.name, rate, question } },
+        speak: question,
+      };
+    }
+  }
 }
 
 function handleFresh(text: string, ctx: DialogueCtx, parsed?: Intent): StepResult {
@@ -95,6 +193,7 @@ function handleFresh(text: string, ctx: DialogueCtx, parsed?: Intent): StepResul
       lang: ctx.lang,
     });
 
+  if (intent.kind === 'command') return handleCommand(intent, ctx);
   if (intent.kind === 'query') {
     const result = answerQuery(intent, ctx.entries, ctx.employers, ctx.today);
     return { state: initialState, speak: m.answer(result, intent.period) };
@@ -121,15 +220,16 @@ const titleCase = (s: string) => s.replace(/(^|\s)([a-z])/g, (_m, a: string, b: 
 
 function handleClarify(state: DialogueState, text: string, ctx: DialogueCtx): StepResult {
   const m = messages(ctx.lang);
+  const cm = commandMessages(ctx.lang);
   const draft = withTranscript(state.draft ?? {}, text);
   const stay = (speak: string): StepResult => ({ state: { ...state, retries: 0 }, speak });
 
   switch (state.asking) {
     case 'amount': {
       const n = parseNumber(text);
-      if (n === null) return stay(m.clarify('amount'));
+      if (n === null) return stay(isMultiDay(draft) ? cm.askPerDay : m.clarify('amount'));
       if (!validateDraft({ amount: n, date: ctx.today }, text, ctx.today).ok) return stay(m.unclearAmount);
-      return proceed({ ...draft, amount: n }, ctx);
+      return proceed({ ...draft, amount: n, amountFrom: 'said' }, ctx);
     }
     case 'type': {
       const t = typeOf(tokenize(text).join(' '));
@@ -155,16 +255,25 @@ function handleClarify(state: DialogueState, text: string, ctx: DialogueCtx): St
   }
 }
 
+/** The amount is safe to save: in range, and either said by the user or the employer's known rate. */
+function amountTrusted(d: Draft): boolean {
+  const a = d.amount;
+  if (a === undefined || !Number.isInteger(a) || a <= 0 || a >= AMOUNT_MAX) return false;
+  if (d.amountFrom === 'rate') return true;
+  const said = allNumbers(d.rawTranscript ?? '');
+  return said.includes(a) || (isMultiDay(d) && said.includes(a * d.days!));
+}
+
 function commit(state: DialogueState, ctx: DialogueCtx): StepResult {
   const m = messages(ctx.lang);
+  const cm = commandMessages(ctx.lang);
   const d = state.draft;
   if (!d || !d.type || d.amount === undefined || !d.employerName) return { state };
 
-  // Defence in depth: re-check the amount against everything the user said.
-  const v = validateDraft(d, d.rawTranscript ?? '', ctx.today);
-  if (!v.ok) {
+  // Defence in depth: re-check the amount against everything the user said (or the known rate).
+  if (!amountTrusted(d)) {
     return {
-      state: { phase: 'CLARIFY', draft: { ...d, amount: undefined }, asking: 'amount', retries: 0 },
+      state: { phase: 'CLARIFY', draft: { ...d, amount: undefined, amountFrom: undefined }, asking: 'amount', retries: 0 },
       speak: m.unclearAmount,
     };
   }
@@ -173,34 +282,57 @@ function commit(state: DialogueState, ctx: DialogueCtx): StepResult {
   if (r.kind === 'ambiguous') {
     return { state: { phase: 'CLARIFY', draft: d, asking: 'employer', retries: 0 }, speak: m.which(r.names) };
   }
+  const learnsRate = d.type === 'work' && d.amountFrom !== 'rate';
   let employerId: string;
   let newEmployer: Employer | undefined;
-  if (r.kind === 'existing') employerId = r.employer.id;
-  else {
-    newEmployer = { id: ctx.newId(), name: r.name };
+  let updateEmployer: StepResult['updateEmployer'];
+  if (r.kind === 'existing') {
+    employerId = r.employer.id;
+    // Learn the rate from the first spoken work amount; never overwrite a known rate by accident.
+    if (learnsRate && !r.employer.dailyRate) updateEmployer = { id: r.employer.id, dailyRate: d.amount };
+  } else {
+    newEmployer = { id: ctx.newId(), name: r.name, ...(learnsRate ? { dailyRate: d.amount } : {}) };
     employerId = newEmployer.id;
   }
 
-  const save: Entry = {
+  const dates = isMultiDay(d) ? lastNDays(d.date ?? ctx.today, d.days!) : [d.date ?? ctx.today];
+  const now = ctx.now();
+  const saves: Entry[] = dates.map((date, i) => ({
     id: ctx.newId(),
     employerId,
-    type: d.type,
-    amount: d.amount,
+    type: d.type!,
+    amount: d.amount!,
     ...(d.hours !== undefined ? { hours: d.hours } : {}),
-    date: d.date ?? ctx.today,
+    date,
     source: 'worker',
     rawTranscript: d.rawTranscript ?? '',
     lang: ctx.lang,
-    createdAt: ctx.now(),
+    createdAt: now + i,
+  }));
+  return {
+    state: { phase: 'SAVED', retries: 0 },
+    speak: saves.length > 1 ? cm.savedDays(saves.length) : m.saved,
+    save: saves[0],
+    saves,
+    newEmployer,
+    updateEmployer,
   };
-  return { state: { phase: 'SAVED', retries: 0 }, speak: m.saved, save, newEmployer };
+}
+
+function commitAction(action: PendingAction, ctx: DialogueCtx): StepResult {
+  const cm = commandMessages(ctx.lang);
+  switch (action.kind) {
+    case 'delete':
+      return { state: initialState, speak: cm.deleted, deleteEntryId: action.entryId };
+    case 'rate':
+      return { state: initialState, speak: cm.rateSaved(action.name, action.rate), updateEmployer: { id: action.employerId, dailyRate: action.rate } };
+    case 'remind':
+      return { state: initialState, speak: cm.openingWhatsApp, openWhatsApp: action.text };
+  }
 }
 
 function handleConfirm(state: DialogueState, text: string, ctx: DialogueCtx, parsed?: Intent): StepResult {
   const m = messages(ctx.lang);
-  const draft = state.draft!;
-  const again = (prefix = ''): StepResult => ({ state: { ...state, retries: 0 }, speak: prefix + m.readBack(draft, ctx.today) });
-
   const intent =
     parsed ??
     parseUtterance(text, {
@@ -209,17 +341,33 @@ function handleConfirm(state: DialogueState, text: string, ctx: DialogueCtx, par
       lang: ctx.lang,
     });
 
+  // A command waiting for yes/no.
+  if (state.action) {
+    const action = state.action;
+    if (intent.kind === 'confirm') return commitAction(action, ctx);
+    if (intent.kind === 'deny') return { state: initialState, speak: m.discarded };
+    return {
+      state: { ...state, retries: 0 },
+      speak: action.question,
+      ...(action.kind === 'remind' ? { reminder: { employerId: action.employerId, text: action.text } } : {}),
+    };
+  }
+
+  const draft = state.draft!;
+  const again = (prefix = ''): StepResult => ({ state: { ...state, retries: 0 }, speak: prefix + m.readBack(draft, ctx.today) });
+
   switch (intent.kind) {
     case 'confirm':
       return commit(state, ctx);
     case 'deny': {
       const n = parseNumber(text);
       if (n === null) return { state: initialState, speak: m.discarded };
-      const corrected = withTranscript({ ...draft, amount: n }, text);
+      const corrected = withTranscript({ ...draft, amount: n, amountFrom: 'said' }, text);
       if (!validateDraft(corrected, text, ctx.today).ok) return again(`${m.unclearAmount} `);
       return { state: { phase: 'CONFIRM', draft: corrected, retries: 0 }, speak: m.readBack(corrected, ctx.today) };
     }
     case 'record':
+    case 'command':
       return handleFresh(text, ctx, intent);
     default:
       return again();
@@ -227,8 +375,8 @@ function handleConfirm(state: DialogueState, text: string, ctx: DialogueCtx, par
 }
 
 /**
- * Pure dialogue reducer. A `save` is produced only from a CONFIRM state by an explicit
- * confirmation (spoken yes or tap_yes); no other path can produce one.
+ * Pure dialogue reducer. Saves, deletes, rate changes and WhatsApp messages are produced only from a
+ * CONFIRM state by an explicit confirmation (spoken yes or tap_yes); no other path can produce them.
  */
 export function step(state: DialogueState, ev: DialogueEvent, ctx: DialogueCtx): StepResult {
   const m = messages(ctx.lang);
@@ -236,7 +384,8 @@ export function step(state: DialogueState, ev: DialogueEvent, ctx: DialogueCtx):
     case 'reset':
       return { state: initialState };
     case 'tap_yes':
-      return state.phase === 'CONFIRM' ? commit(state, ctx) : { state };
+      if (state.phase !== 'CONFIRM') return { state };
+      return state.action ? commitAction(state.action, ctx) : commit(state, ctx);
     case 'tap_no':
       return state.phase === 'CONFIRM' ? { state: initialState, speak: m.discarded } : { state };
     case 'heard': {

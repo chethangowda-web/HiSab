@@ -1,5 +1,6 @@
 import type { Draft, EntryType, Lang } from '../domain/types';
 import type { QueryResult } from '../domain/queries';
+import { lastNDays } from '../domain/dates';
 
 export type Field = 'type' | 'employer' | 'amount';
 
@@ -65,11 +66,27 @@ const HOURS: Record<Lang, (h: number) => string> = {
   'kn-IN': (h) => ` ${h} ಗಂಟೆ`,
 };
 
+const DAYS_WORD: Record<Lang, string> = { 'en-IN': 'days', 'hi-IN': 'दिन', 'kn-IN': 'ದಿನ' };
+const USUAL_RATE: Record<Lang, string> = { 'en-IN': 'usual rate', 'hi-IN': 'रोज़ का रेट', 'kn-IN': 'ದಿನದ ರೇಟ್' };
+
 const readBackFor = (lang: Lang, tail: string, rupees: string) => (d: Draft, today: string) => {
   const type = d.type ? TYPE[lang][d.type] : '';
   const hours = d.hours !== undefined ? HOURS[lang](d.hours) : '';
-  return `${d.employerName ?? ''}. ${type}${hours}. ${d.amount} ${rupees}. ${datePhrase(lang, d.date, today)}. ${tail}`;
+  const usual = d.amountFrom === 'rate' ? ` (${USUAL_RATE[lang]})` : '';
+  if (d.days && d.days > 1 && d.amount !== undefined) {
+    const dates = lastNDays(d.date ?? today, d.days)
+      .map((x) => datePhrase(lang, x, today))
+      .join(', ');
+    return `${d.employerName ?? ''}. ${type}, ${d.days} ${DAYS_WORD[lang]}: ${dates}. ${d.days} × ${d.amount}${usual} = ${d.amount * d.days} ${rupees}. ${tail}`;
+  }
+  return `${d.employerName ?? ''}. ${type}${hours}. ${d.amount} ${rupees}${usual}. ${datePhrase(lang, d.date, today)}. ${tail}`;
 };
+
+/** A short description of a saved entry, used when asking to delete it. */
+export function entryLabel(lang: Lang, e: { type: EntryType; amount: number; date: string }, employerName: string, today: string): string {
+  const rupees = { 'en-IN': 'rupees', 'hi-IN': 'रुपये', 'kn-IN': 'ರೂಪಾಯಿ' }[lang];
+  return `${employerName}, ${TYPE[lang][e.type]}, ${e.amount} ${rupees}, ${datePhrase(lang, e.date, today)}`;
+}
 
 const en: Messages = {
   readBack: readBackFor('en-IN', 'Shall I save it? Say yes or no.', 'rupees'),

@@ -1,6 +1,6 @@
-import type { Draft, EntryType, Intent, Lang, QueryKind } from '../domain/types';
+import type { CommandKind, Draft, EntryType, Intent, Lang, QueryKind } from '../domain/types';
 import { UNITS, MULTS, YES_WORDS, NO_WORDS } from './lexicon';
-import { moneyAmounts, parseNumber, parseHours, resolveDate, tokenize } from './normalize';
+import { isPerDay, moneyAmounts, parseDays, parseNumber, parseHours, resolveDate, tokenize } from './normalize';
 
 export interface ParseContext {
   today: string;
@@ -122,6 +122,21 @@ const ADVANCE_Q = /advance|peshgi|पेशगी|एडवांस|अडव�
 const EARNED_Q = /earn|\bmade\b|kamaya|kamai|kamaye|income|salary|कमाया|कमाई|ಸಂಪಾದ|ಗಳಿಸ/;
 const MONTH = /this month|\bmonth\b|mahine|mahina|इस महीने|ಈ ತಿಂಗಳು/;
 
+// ---- spoken commands ----
+const STATEMENT_CMD = /hisa+b dikha|हिसाब दिखा|\bstatement\b|khata dikha|खाता दिखा|ಲೆಕ್ಕ ತೋರಿಸ|lekka torisi/;
+const REMIND_CMD = /yaad dila|याद दिला|\bremind|ನೆನಪಿಸ|ನೆನಪು ಮಾಡ|nenapisu/;
+const UNDO_CMD = /\bundo\b|(?:aakhri|akhri|last|pichli|आखिरी|पिछली|ಕೊನೆಯ)\s+(?:entry|एंट्री|ದಾಖಲೆ)|delete last|entry hatao|एंट्री हटाओ/;
+const RATE_CMD = /\brate\b|रेट|ರೇಟ್/;
+
+function commandOf(s: string, text: string): CommandKind | undefined {
+  if (UNDO_CMD.test(s)) return 'undo';
+  if (REMIND_CMD.test(s)) return 'remind';
+  if (STATEMENT_CMD.test(s)) return 'statement';
+  // "Ramesh ka rate 750 hai": a rate word and an amount, and not a work entry or a question.
+  if (RATE_CMD.test(s) && parseNumber(text) !== null && !WORK_W.test(s) && !QUESTION.test(s)) return 'set_rate';
+  return undefined;
+}
+
 const ADVANCE_W = /\badvance\b|peshgi|पेशगी|एडवांस|अडवांस|ಮುಂಗಡ|ಅಡ್ವಾನ್ಸ್/;
 const OVERTIME_W = /overtime|\bextra\b|\bekstra\b|ओवरटाइम|ಓವರ್ಟೈಮ್|ಹೆಚ್ಚುವರಿ/;
 const PAYMENT_W = /\bpaid\b|\bpayment\b|\bgave\b|\bgive\b|\bgiven\b|\breceived\b|\bgot\b|\bdiya\b|\bdiye\b|\bmila\b|\bmile\b|\bmili\b|दिया|दिए|मिला|मिले|ಕೊಟ್ಟ|ಸಿಕ್ಕಿ/;
@@ -153,13 +168,23 @@ export function parseUtterance(text: string, ctx: ParseContext): Intent {
   if (YES_WORDS.has(tokens[0]) && tokens.length <= 4) return { kind: 'confirm' };
   if (tokens.length <= 4 && /repeat|dobara|phir se|again/.test(s)) return { kind: 'repeat' };
 
+  const cmd = commandOf(s, text);
+  if (cmd) {
+    const employerName = cmd === 'undo' ? undefined : extractEmployer(tokens, ctx.employers);
+    const amount = cmd === 'set_rate' ? parseNumber(text) : null;
+    return { kind: 'command', cmd, ...(employerName ? { employerName } : {}), ...(amount !== null ? { amount } : {}) };
+  }
+
   const q = queryOf(s);
   if (q) {
     const employerName = extractEmployer(tokens, ctx.employers);
     return { kind: 'query', q, employerName, period: MONTH.test(s) ? 'month' : 'all' };
   }
 
-  const type = typeOf(s);
+  const spokenType = typeOf(s);
+  // "3 din" with no other type word is work; days only apply to work.
+  const days = spokenType === undefined || spokenType === 'work' ? parseDays(text) : null;
+  const type = spokenType ?? (days ? 'work' : undefined);
   const amount = parseNumber(text);
   const hours = parseHours(text);
   if (!type && amount === null) return { kind: 'unknown' };
@@ -168,6 +193,10 @@ export function parseUtterance(text: string, ctx: ParseContext): Intent {
 
   const draft: Draft = { rawTranscript: text, lang: ctx.lang, date: resolveDate(text, ctx.today) ?? ctx.today };
   if (type) draft.type = type;
+  if (days) {
+    draft.days = days;
+    draft.perDay = isPerDay(text);
+  }
   if (amount !== null) draft.amount = amount;
   if (hours !== null) draft.hours = hours;
   const employerName = extractEmployer(tokens, ctx.employers);
