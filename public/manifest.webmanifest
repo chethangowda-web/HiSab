@@ -1,0 +1,14 @@
+{
+  "name": "BoliHisab",
+  "short_name": "BoliHisab",
+  "description": "Speak your workday, wages and advances. A voice-first wage tracker for India's informal workers.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

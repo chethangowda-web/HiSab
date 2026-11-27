@@ -15,7 +15,7 @@ flowchart LR
     SRV -.-> LLM[Local open model<br/>Gemma-4-E2B / Qwen2.5-3B<br/>via Ollama or llama.cpp]
 ```
 
-Everything works offline-first on the device. The local model server is an **optional enhancement**, never required. No closed API, no keys, no per-call cost, so the same stack can run on an edge device.
+Records live on the worker's device (IndexedDB), with no backend. The local model server is an **optional enhancement**, never required. No closed API, no keys, no per-call cost, so the same stack can run on an edge device.
 
 ## 2. Voice pipeline (the core flow)
 
@@ -115,11 +115,11 @@ Balance for an employer = (work wages + overtime) − (advances + payments).
 
 | Decision | Choice | Why |
 |---|---|---|
-| Client | React + TypeScript + Vite PWA | Fast to build, installable, mobile-first |
+| Client | React + TypeScript + Vite web app with an install manifest | Fast to build, installable to the home screen, mobile-first |
 | Speech | Browser Web Speech API | No keys, supports `kn-IN`, `hi-IN`, `en-IN` in Chrome/Android |
 | Parsing | Rule-based default, optional local open LLM (Gemma-4-E2B, backup Qwen2.5-3B) | Repo runs with no secrets; small open model is cheap and edge-deployable; LLM handles messy mixed-language |
 | Hallucination guard | Amount must appear in transcript, JSON-constrained, temp 0 | Small models invent values; this blocks them before confirm |
-| Storage | IndexedDB via Dexie | Persistent, offline, no backend |
+| Storage | IndexedDB via Dexie | Persistent on the device, no backend |
 | PDF | Printable HTML statement, "Save as PDF" via the browser | PDF libraries such as jsPDF cannot shape Kannada/Hindi text (no complex-script shaping); the browser can, and embeds a proper font. Verified in real Chrome. |
 | Demo mode | Rows flagged `demo`, shown instead of real rows | Turning demo on or off never touches real records |
 | Money | Integer rupees | No float errors |

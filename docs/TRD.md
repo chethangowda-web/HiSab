@@ -1,7 +1,7 @@
 # BoliHisab – Technical Requirements (TRD)
 
 ## 1. Stack
-- React 18 + TypeScript + Vite, PWA (manifest + service worker)
+- React 18 + TypeScript + Vite, installable web app (manifest; no service worker yet)
 - Tailwind CSS (large touch targets)
 - Dexie (IndexedDB)
 - Wage statement: an HTML page with print styles, saved as PDF through the browser's print dialog (no PDF library; see section 8)
@@ -109,7 +109,7 @@ Settings toggle, with an always-visible "DEMO MODE" badge. It uses seed data and
 
 ## 11. Non-functional
 - Runs with `npm install && npm run dev`, no `.env` needed.
-- Works offline after the first load.
+- Records are stored on the device (IndexedDB) and survive reloads. The app itself needs a network connection to load: an offline service worker is not built yet. Browser speech recognition also needs a connection (Chrome sends audio to Google); typing and all ledger features work without voice.
 - Voice round trip under 3 s on a mid-range Android phone (excluding speaking time).
 - Minimum touch target is 56px, and the mic button is at least 96px.
 - Accessible: high contrast, spoken and visual feedback for every state.
