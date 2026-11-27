@@ -20,7 +20,8 @@ export interface DialogueView {
 export interface UseDialogue extends DialogueView {
   supported: boolean;
   start(): void;
-  typed(text: string): void;
+  /** Resolves once the whole turn is done: saved (if confirmed) and spoken. */
+  typed(text: string): Promise<void>;
   yes(): void;
   no(): void;
 }
@@ -59,9 +60,11 @@ export function useDialogue(): UseDialogue {
       setView((v) => ({ ...v, phase: r.state.phase, phrase: r.speak ?? v.phrase, needTyping: r.needTyping ?? false }));
     }
     // Persist before speaking "Saved" so the words are true.
-    if (r.newEmployer) await db.employers.put(r.newEmployer);
+    // In demo mode everything created is flagged, so it can never mix with real records.
+    const flag = a.demoMode ? { demo: true } : {};
+    if (r.newEmployer) await db.employers.put({ ...r.newEmployer, ...flag });
     if (r.save) {
-      await addEntry(r.save);
+      await addEntry({ ...r.save, ...flag });
       await a.reload();
     }
     if (r.speak) await speak(r.speak, a.lang);
@@ -96,7 +99,7 @@ export function useDialogue(): UseDialogue {
     ...view,
     supported: isSpeechSupported(),
     start: () => void listenTurn(),
-    typed: (text) => void run({ type: 'heard', text, confidence: 1 }, false),
+    typed: (text) => run({ type: 'heard', text, confidence: 1 }, false),
     yes: () => void run({ type: 'tap_yes' }, false),
     no: () => void run({ type: 'tap_no' }, false),
   };

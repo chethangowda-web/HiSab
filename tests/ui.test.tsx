@@ -51,7 +51,7 @@ afterEach(() => {
 describe('Home', () => {
   it('shows a mic of at least 96px and the outstanding balance from stored data', async () => {
     enableVoice();
-    await seedDemoData(); // 3 x 700 work - 1000 advance = 1100
+    await seedDemoData({ demo: false }); // 3 x 700 work - 1000 advance = 1100
     render(<App />);
     const mic = await screen.findByRole('button', { name: /tap to speak/i });
     expect(mic.className).toMatch(/\bh-28\b/);
@@ -120,7 +120,7 @@ describe('Home', () => {
   });
 
   it('answers a balance question by text and voice phrase', async () => {
-    await seedDemoData();
+    await seedDemoData({ demo: false });
     render(<App />);
     fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'How much does Ramesh still owe me?' } });
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
@@ -132,7 +132,7 @@ describe('navigation and lists', () => {
   const goto = async (name: RegExp) => fireEvent.click(await screen.findByRole('button', { name }));
 
   it('Ledger lists entries newest first with a worker-recorded badge', async () => {
-    await seedDemoData();
+    await seedDemoData({ demo: false });
     render(<App />);
     await goto(/^ledger$/i);
     const rows = await screen.findAllByTestId('ledger-row');
@@ -149,7 +149,7 @@ describe('navigation and lists', () => {
   });
 
   it('Employers shows each employer with days, earned and outstanding', async () => {
-    await seedDemoData();
+    await seedDemoData({ demo: false });
     render(<App />);
     await goto(/^employers$/i);
     const card = await screen.findByTestId('employer-card');
@@ -160,7 +160,7 @@ describe('navigation and lists', () => {
   });
 
   it('Payments lists advances and payments with totals', async () => {
-    await seedDemoData();
+    await seedDemoData({ demo: false });
     render(<App />);
     await goto(/^payments$/i);
     const rows = await screen.findAllByTestId('payment-row');

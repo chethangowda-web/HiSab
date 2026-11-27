@@ -132,6 +132,22 @@ describe('speech output', () => {
     await expect(speak('hello', 'en-IN')).resolves.toBeUndefined();
   });
 
+  it('gives up waiting if the engine never finishes, so the dialogue cannot hang', async () => {
+    vi.useFakeTimers();
+    try {
+      mockSynth(['en-IN']);
+      (w.speechSynthesis as { speak: (u: MockUtterance) => void }).speak = () => {}; // never ends
+      const done = vi.fn();
+      void speak('hello', 'en-IN').then(done);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(done).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(10000);
+      expect(done).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('resolves even if the engine errors', async () => {
     mockSynth(['en-IN']);
     (w.speechSynthesis as { speak: (u: MockUtterance) => void }).speak = (u) => setTimeout(() => u.onerror?.(), 0);

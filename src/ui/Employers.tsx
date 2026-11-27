@@ -2,7 +2,7 @@ import { daysWorked, totals } from '../domain/ledger';
 import { inr } from '../i18n/ui';
 import { useApp } from './AppContext';
 
-export default function Employers() {
+export default function Employers({ onStatement }: { onStatement: (employerId: string) => void }) {
   const { t, entries, employers } = useApp();
   if (employers.length === 0) return <p className="text-center text-slate-600">{t.noEmployers}</p>;
 
@@ -25,6 +25,13 @@ export default function Employers() {
               <dt className="font-semibold text-teal-900">{t.outstanding}</dt>
               <dd className="text-right text-xl font-bold text-teal-900">{inr(sum.outstanding)}</dd>
             </dl>
+            <button
+              type="button"
+              onClick={() => onStatement(emp.id)}
+              className="mt-3 h-12 rounded-xl bg-teal-100 px-4 text-base font-semibold text-teal-900"
+            >
+              {t.statementBtn}
+            </button>
           </li>
         );
       })}

@@ -76,7 +76,7 @@ Queries ("How much does Ramesh owe me?") skip confirmation: NLU returns a `Query
 └───────────────┬──────────────────────────────────────────────────────┘
                 │
 ┌───────────────▼──────────────── Persistence / Output ────────────────┐
-│ Dexie (IndexedDB)   Seed/Demo data   jsPDF   Web Share / share link   │
+│ Dexie (IndexedDB)   Seed/Demo data   Print-to-PDF   Web Share / WhatsApp │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -120,7 +120,8 @@ Balance for an employer = (work wages + overtime) − (advances + payments).
 | Parsing | Rule-based default, optional local open LLM (Gemma-4-E2B, backup Qwen2.5-3B) | Repo runs with no secrets; small open model is cheap and edge-deployable; LLM handles messy mixed-language |
 | Hallucination guard | Amount must appear in transcript, JSON-constrained, temp 0 | Small models invent values; this blocks them before confirm |
 | Storage | IndexedDB via Dexie | Persistent, offline, no backend |
-| PDF | jsPDF in browser | No server needed |
+| PDF | Printable HTML statement, "Save as PDF" via the browser | PDF libraries such as jsPDF cannot shape Kannada/Hindi text (no complex-script shaping); the browser can, and embeds a proper font. Verified in real Chrome. |
+| Demo mode | Rows flagged `demo`, shown instead of real rows | Turning demo on or off never touches real records |
 | Money | Integer rupees | No float errors |
 | Safety | Mandatory read-back + confirm | Never save a wrong amount |
 | Fallback | Typed/tap input and Demo mode | Judges on non-Chrome or noisy rooms still see it work |

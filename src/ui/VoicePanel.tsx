@@ -1,20 +1,39 @@
 import { useState, type FormEvent } from 'react';
 import { useApp } from './AppContext';
+import { SAMPLES } from './samples';
 import { useDialogue } from './useDialogue';
+
+/** Pause between scripted demo lines so a viewer can read each reply (no pause under test). */
+const PAUSE_MS = import.meta.env.MODE === 'test' ? 0 : 900;
+const pause = () => new Promise<void>((r) => setTimeout(r, PAUSE_MS));
 
 /** The mic button, what the app is saying, yes/no buttons, and the typed fallback. */
 export default function VoicePanel() {
-  const { t } = useApp();
+  const { t, lang, demoMode } = useApp();
   const d = useDialogue();
   const [text, setText] = useState('');
+  const [playing, setPlaying] = useState(false);
 
   const showTyping = !d.supported || d.needTyping || d.micIssue !== '';
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const v = text.trim();
     if (!v) return;
-    d.typed(v);
+    void d.typed(v);
     setText('');
+  };
+
+  /** Feeds the canned script through the real dialogue: record, confirm, then ask the balance. */
+  const playSample = async () => {
+    setPlaying(true);
+    try {
+      for (const line of SAMPLES[lang]) {
+        await d.typed(line);
+        await pause(); // lets the screen refresh before the next line reads the ledger
+      }
+    } finally {
+      setPlaying(false);
+    }
   };
 
   return (
@@ -75,6 +94,17 @@ export default function VoicePanel() {
             {t.send}
           </button>
         </form>
+      )}
+
+      {demoMode && (
+        <button
+          type="button"
+          onClick={() => void playSample()}
+          disabled={playing}
+          className="h-14 rounded-xl border-2 border-dashed border-amber-600 px-6 text-xl font-semibold text-amber-800 disabled:opacity-50"
+        >
+          ▶ {t.playSample}
+        </button>
       )}
     </section>
   );

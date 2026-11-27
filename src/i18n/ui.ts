@@ -31,6 +31,33 @@ export interface UiText {
   total: string;
   language: string;
   languageHelp: string;
+  statementTitle: string;
+  statementBtn: string;
+  savePdf: string;
+  shareSummary: string;
+  back: string;
+  confirmByEmployer: string;
+  edit: string;
+  delete: string;
+  save: string;
+  cancel: string;
+  deleteAsk: string;
+  demoModeLabel: string;
+  demoBanner: string;
+  demoNote: string;
+  playSample: string;
+  demoHelp: string;
+  yourName: string;
+  footerNote: string;
+  invalidAmount: string;
+  invalidDate: string;
+  futureDate: string;
+  amountLabel: string;
+  dateLabel: string;
+  colDate: string;
+  colType: string;
+  colAmount: string;
+  colRecordedBy: string;
 }
 
 const en: UiText = {
@@ -64,6 +91,33 @@ const en: UiText = {
   total: 'Total',
   language: 'Language',
   languageHelp: 'The app will speak and show text in this language.',
+  statementTitle: 'Wage statement',
+  statementBtn: 'Statement',
+  savePdf: 'Save as PDF',
+  shareSummary: 'Share summary',
+  back: 'Back',
+  confirmByEmployer: 'Employer confirms',
+  edit: 'Edit',
+  delete: 'Delete',
+  save: 'Save',
+  cancel: 'Cancel',
+  deleteAsk: 'Delete this entry?',
+  demoModeLabel: 'Demo mode',
+  demoBanner: 'DEMO MODE',
+  demoNote: 'Sample data, not real records.',
+  playSample: 'Play sample',
+  demoHelp: 'Shows sample data so you can try the app. Your real records are kept safe and hidden.',
+  yourName: 'Your name',
+  footerNote: 'Worker-recorded unless marked Employer-confirmed',
+  invalidAmount: 'Enter an amount between 1 and 99,999.',
+  invalidDate: 'Enter a valid date.',
+  futureDate: 'The date cannot be in the future.',
+  amountLabel: 'Amount',
+  dateLabel: 'Date',
+  colDate: 'Date',
+  colType: 'Type',
+  colAmount: 'Amount',
+  colRecordedBy: 'Recorded by',
 };
 
 const hi: UiText = {
@@ -97,6 +151,33 @@ const hi: UiText = {
   total: 'कुल',
   language: 'भाषा',
   languageHelp: 'ऐप इसी भाषा में बोलेगा और दिखाएगा।',
+  statementTitle: 'मज़दूरी का स्टेटमेंट',
+  statementBtn: 'स्टेटमेंट',
+  savePdf: 'PDF के रूप में सेव करें',
+  shareSummary: 'सारांश शेयर करें',
+  back: 'वापस',
+  confirmByEmployer: 'मालिक पुष्टि करे',
+  edit: 'बदलें',
+  delete: 'हटाएँ',
+  save: 'सेव करें',
+  cancel: 'रद्द करें',
+  deleteAsk: 'यह एंट्री हटाएँ?',
+  demoModeLabel: 'डेमो मोड',
+  demoBanner: 'DEMO MODE',
+  demoNote: 'नमूना डेटा, असली रिकॉर्ड नहीं।',
+  playSample: 'नमूना चलाएँ',
+  demoHelp: 'ऐप आज़माने के लिए नमूना डेटा दिखाता है। आपके असली रिकॉर्ड सुरक्षित रहते हैं, बस छिपे रहते हैं।',
+  yourName: 'आपका नाम',
+  footerNote: 'मज़दूर ने दर्ज किया, जब तक "मालिक ने पुष्टि की" न लिखा हो',
+  invalidAmount: '1 से 99,999 के बीच रकम लिखें।',
+  invalidDate: 'सही तारीख लिखें।',
+  futureDate: 'तारीख आगे की नहीं हो सकती।',
+  amountLabel: 'रकम',
+  dateLabel: 'तारीख',
+  colDate: 'तारीख',
+  colType: 'प्रकार',
+  colAmount: 'रकम',
+  colRecordedBy: 'किसने दर्ज किया',
 };
 
 const kn: UiText = {
@@ -130,6 +211,33 @@ const kn: UiText = {
   total: 'ಒಟ್ಟು',
   language: 'ಭಾಷೆ',
   languageHelp: 'ಆಪ್ ಈ ಭಾಷೆಯಲ್ಲಿ ಮಾತನಾಡುತ್ತದೆ ಮತ್ತು ತೋರಿಸುತ್ತದೆ.',
+  statementTitle: 'ಕೂಲಿ ಹೇಳಿಕೆ',
+  statementBtn: 'ಹೇಳಿಕೆ',
+  savePdf: 'PDF ಆಗಿ ಉಳಿಸಿ',
+  shareSummary: 'ಸಾರಾಂಶ ಹಂಚಿ',
+  back: 'ಹಿಂದೆ',
+  confirmByEmployer: 'ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ',
+  edit: 'ಬದಲಿಸಿ',
+  delete: 'ಅಳಿಸಿ',
+  save: 'ಉಳಿಸಿ',
+  cancel: 'ರದ್ದು',
+  deleteAsk: 'ಈ ದಾಖಲೆಯನ್ನು ಅಳಿಸಬೇಕೇ?',
+  demoModeLabel: 'ಡೆಮೋ ಮೋಡ್',
+  demoBanner: 'DEMO MODE',
+  demoNote: 'ಮಾದರಿ ಡೇಟಾ, ನಿಜವಾದ ದಾಖಲೆಗಳಲ್ಲ.',
+  playSample: 'ಮಾದರಿ ಪ್ಲೇ ಮಾಡಿ',
+  demoHelp: 'ಆಪ್ ಪ್ರಯತ್ನಿಸಲು ಮಾದರಿ ಡೇಟಾ ತೋರಿಸುತ್ತದೆ. ನಿಮ್ಮ ನಿಜವಾದ ದಾಖಲೆಗಳು ಸುರಕ್ಷಿತವಾಗಿವೆ, ಮರೆಯಾಗಿವೆ ಅಷ್ಟೇ.',
+  yourName: 'ನಿಮ್ಮ ಹೆಸರು',
+  footerNote: 'ಕೆಲಸಗಾರರು ದಾಖಲಿಸಿದ್ದು, "ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದು" ಎಂದು ಗುರುತಿಸದ ಹೊರತು',
+  invalidAmount: '1 ರಿಂದ 99,999 ರ ನಡುವೆ ಮೊತ್ತ ಬರೆಯಿರಿ.',
+  invalidDate: 'ಸರಿಯಾದ ದಿನಾಂಕ ಬರೆಯಿರಿ.',
+  futureDate: 'ದಿನಾಂಕ ಭವಿಷ್ಯದ್ದಾಗಿರಬಾರದು.',
+  amountLabel: 'ಮೊತ್ತ',
+  dateLabel: 'ದಿನಾಂಕ',
+  colDate: 'ದಿನಾಂಕ',
+  colType: 'ಬಗೆ',
+  colAmount: 'ಮೊತ್ತ',
+  colRecordedBy: 'ದಾಖಲಿಸಿದವರು',
 };
 
 const ALL: Record<Lang, UiText> = { 'en-IN': en, 'hi-IN': hi, 'kn-IN': kn };

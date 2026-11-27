@@ -4,7 +4,7 @@
 - React 18 + TypeScript + Vite, PWA (manifest + service worker)
 - Tailwind CSS (large touch targets)
 - Dexie (IndexedDB)
-- jsPDF + jspdf-autotable
+- Wage statement: an HTML page with print styles, saved as PDF through the browser's print dialog (no PDF library; see section 8)
 - Web Speech API: `SpeechRecognition`, `speechSynthesis`
 - Vitest for unit tests
 - Optional "edge mode": local open-source LLM (primary `google/gemma-4-E2B`, backup `Qwen2.5-3B-Instruct`, 4-bit quantized) served via Ollama/llama.cpp, called through a small Node proxy `server/`. No paid or closed API, so no keys and no per-call cost.
@@ -91,7 +91,15 @@ States: `IDLE → LISTENING → PARSING → (CLARIFY ↔ LISTENING) → CONFIRM 
 - All money in integer rupees.
 
 ## 8. PDF statement
-Header (worker name, employer, period), a table of dated entries with source badge, totals (earned, advances, payments, **outstanding**), footer "Worker-recorded unless marked Employer-confirmed". Shared through `navigator.share` with a download fallback.
+Header (worker name, employer, date), a table of dated entries with source label, totals (earned, advances, payments, **outstanding**), footer "Worker-recorded unless marked Employer-confirmed".
+
+**Why print-to-PDF and not a PDF library:** libraries like jsPDF have no complex-script shaping, so Kannada and Hindi vowel signs and conjuncts come out wrong, and Kannada employer names are exactly what workers will have. The statement is a normal page with `@media print` rules (only the statement prints); "Save as PDF" calls `window.print()` and the browser shapes the text and embeds a proper font (checked in real Chrome: valid PDF with NirmalaUI embedded).
+
+**Sharing:** "Share summary" sends a plain-text summary through `navigator.share`, falling back to a WhatsApp link (`wa.me`). Text works in any script.
+
+**Edit / delete:** amount and date can be edited (same bounds as spoken entries); deleting asks first. Editing an employer-confirmed entry voids the confirmation, so it returns to worker-recorded.
+
+**Demo mode:** sample rows are flagged `demo` and shown instead of real rows; turning it off deletes only the flagged rows. The content is hidden while switching so nothing can be saved halfway.
 
 ## 9. Employer confirmation (P1, minimal)
 Each entry can be marked confirmed from the worker's phone with an employer "Confirm" tap, which flips `source` to `employer_confirmed`. No separate employer account.

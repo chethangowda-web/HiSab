@@ -47,3 +47,25 @@ export async function findOrCreateEmployer(name: string): Promise<Employer> {
   await db.employers.put(created);
   return created;
 }
+
+/** Marks an entry as confirmed by the employer. No-op for an unknown id. */
+export async function confirmByEmployer(id: string): Promise<void> {
+  await db.entries.update(id, { source: 'employer_confirmed' });
+}
+
+/** Changes amount and date. An edit voids any employer confirmation, so it goes back to worker-recorded. */
+export async function updateEntry(id: string, patch: { amount: number; date: string }): Promise<void> {
+  await db.entries.update(id, { amount: patch.amount, date: patch.date, source: 'worker' });
+}
+
+export async function deleteEntry(id: string): Promise<void> {
+  await db.entries.delete(id);
+}
+
+/** Removes only demo-mode rows; real records are never touched. */
+export async function clearDemoData(): Promise<void> {
+  const entryIds = await db.entries.filter((e) => e.demo === true).primaryKeys();
+  const employerIds = await db.employers.filter((e) => e.demo === true).primaryKeys();
+  await db.entries.bulkDelete(entryIds);
+  await db.employers.bulkDelete(employerIds);
+}
