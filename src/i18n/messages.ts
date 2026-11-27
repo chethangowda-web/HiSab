@@ -43,6 +43,9 @@ const TYPE: Record<Lang, Record<EntryType, string>> = {
   'hi-IN': { work: 'काम', overtime: 'ओवरटाइम', advance: 'एडवांस', payment: 'भुगतान' },
   'kn-IN': { work: 'ಕೆಲಸ', overtime: 'ಓವರ್‌ಟೈಮ್', advance: 'ಮುಂಗಡ', payment: 'ಪಾವತಿ' },
 };
+/** Short spoken/written label for an entry type. */
+export const typeLabel = (lang: Lang, type: EntryType): string => TYPE[lang][type];
+
 const HOURS: Record<Lang, (h: number) => string> = {
   'en-IN': (h) => ` ${h} hours`,
   'hi-IN': (h) => ` ${h} घंटे`,

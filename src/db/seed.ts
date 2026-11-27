@@ -1,10 +1,11 @@
 import type { Entry } from '../domain/types';
+import { localISODate } from '../domain/dates';
 import { db, newId } from './db';
 
 const isoDaysAgo = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return localISODate(d);
 };
 
 /** Replaces all data with a small labelled demo ledger. */
