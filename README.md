@@ -21,15 +21,29 @@ Built for **Build for Bharat, Round 2** (theme: *Livelihoods and small business*
 4. **Ask** — *"Ramesh ne kitna dena hai?"* and it answers out loud, in your language.
 5. **Prove** — open an employer's **Statement** and *Save as PDF* or share a summary on WhatsApp.
 
+### Made for daily use
+
+- **Remembers each employer's rate.** After the first time, *"aaj Ramesh ke yahan kaam kiya"* is enough:
+  it fills in Ramesh's usual ₹700 (labelled "usual rate", still confirmed).
+- **Several days in one sentence.** *"Ramesh ke yahan 3 din kaam kiya"* → three dated days, 3 × ₹700 = ₹2,100.
+- **Everything by voice.** *"Ramesh ka hisab dikhao"* opens the statement · *"Ramesh ko yaad dilao"* writes a
+  polite reminder in your language and opens WhatsApp (nothing is sent without a tap) · *"aakhri entry hatao"*
+  deletes the last entry after a yes · *"Ramesh ka rate 750 hai"* changes the rate after a yes.
+- **Voice proof.** Each spoken entry keeps a short clip of the worker's own voice, on the phone only.
+  In a dispute, press ▶ on the entry and play back exactly what was said that day.
+- **Wispr Flow** transcribes the worker when the server has a key (strong on Hinglish and Indian accents,
+  and it is sent the employer names so they are spelled right). Without a key, the phone's own speech
+  recognition is used automatically.
+
 Also: ledger grouped by day, employers, advances and payments, employer-confirmed marks
 ("Worker-recorded" vs "Employer-confirmed"), edit and delete, and a labelled **Demo mode**.
 
 ### Safety rules the app enforces
 
-- Never saves an amount without a spoken or tapped confirmation.
+- Never saves, deletes, changes a rate or sends a message without a spoken or tapped yes.
 - Asks again when speech is unclear or a field is missing, instead of guessing.
 - A sentence with **two different amounts** is refused, never merged into one record.
-- An amount must actually appear in what was said (this is also what guards the optional AI model).
+- An amount must actually appear in what was said, or be the employer's known rate (clearly labelled).
 - Real records and demo data are kept apart; turning demo mode off never touches real records.
 
 ## Run it
@@ -43,9 +57,24 @@ npm run dev        # http://localhost:5173
 Without speech support the app shows a text box instead, so everything still works by typing.
 
 ```bash
-npm test           # 386 tests
+npm test           # 519 tests
 npm run build      # type-check + production build
 ```
+
+### Wispr Flow (recommended for real voice use)
+
+The browser records the worker, converts it to 16 kHz WAV, and sends it to our small server, which adds
+your **Wispr Flow API key** and calls Wispr Flow. The key never reaches the browser or the repo.
+
+```bash
+# terminal 1 (PowerShell: $env:WISPR_API_KEY="fl-..."; npm run server)
+WISPR_API_KEY=fl-... npm run server     # http://127.0.0.1:8787
+# terminal 2
+npm run dev                             # the app proxies /api to the server
+```
+
+Settings → **Voice engine** shows whether Wispr Flow is connected. If it fails, the app switches to the
+phone's speech recognition for that sentence.
 
 ### Try it without a microphone
 
@@ -94,6 +123,10 @@ Design docs: [PRD](docs/PRD.md) · [TRD](docs/TRD.md) · [Architecture](docs/ARC
 
 ## Honest limits
 
+- **Wispr Flow has not yet been called with a real key.** The integration follows Wispr Flow's API docs
+  and is tested with a fake server; the 16 kHz WAV conversion was checked in real Chrome. Whether Wispr
+  Flow supports **Kannada** is not confirmed; if it rejects a language, the app falls back to phone speech.
+- **Names are matched within one script.** "ರಮೇಶ್" and "Ramesh" are treated as different employers.
 - **Voice quality is the biggest unknown.** Browser speech recognition for Kannada and Hindi varies
   with accent and noise, and Chrome sends the audio to Google, so voice needs a connection. The
   confirm-before-save step and typed fallback exist because of this. It has been tested with scripted
@@ -101,6 +134,7 @@ Design docs: [PRD](docs/PRD.md) · [TRD](docs/TRD.md) · [Architecture](docs/ARC
 - The Hindi and Kannada wording was written by the author and **needs review by native speakers**.
 - "Employer confirms" is a tap on the worker's phone, not a separate employer app or login.
 - The app needs a connection to load the first time. There is no offline service worker yet.
+- The public GitHub Pages link has no server, so it uses phone speech, not Wispr Flow.
 - PDF export uses the browser's *Save as PDF* (so Kannada and Hindi text is shaped correctly).
 - Data lives only on one device: no sync or backup yet.
 
