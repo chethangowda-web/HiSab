@@ -26,15 +26,17 @@ const NOT_A_NAME = set([
   'the', 'a', 'an', 'my', 'me', 'i', 'you', 'he', 'she', 'they', 'we', 'it', 'is', 'are', 'was', 'were', 'and', 'or', 'of', 'in', 'on',
   'at', 'for', 'from', 'to', 'with', 'by', 'this', 'that', 'how', 'much', 'many', 'what', 'when', 'tell', 'show', 'still', 'not', 'did',
   'do', 'does', 'have', 'has', 'had', 'worked', 'work', 'gave', 'give', 'paid', 'pay', 'got', 'received', 'took', 'owe', 'owes',
+  'think', 'maybe', 'probably', 'please', 'sorry', 'hello', 'hi', 'hey', 'yes', 'no', 'okay', 'ok', 'yeah',
   'today', 'yesterday', 'month', 'day', 'days', 'hour', 'hours', 'extra', 'overtime', 'advance', 'money', 'rupees', 'rupee', 'rs',
   'site', 'construction', 'house', 'home', 'shop', 'factory', 'contractor', 'owner', 'boss', 'sir', 'madam', 'employer', 'thekedar',
   'malik', 'seth', 'sethji', 'aaj', 'kal', 'kaam', 'kiya', 'kiye', 'diya', 'diye', 'mila', 'mile', 'mujhe', 'mujhko', 'maine', 'hum',
+  'mere', 'mera', 'meri', 'hamara', 'hamari', 'unke', 'unka', 'uski', 'uske',
   'hame', 'hamen', 'ne', 'ke', 'ka', 'ki', 'se', 'ko', 'pe', 'par', 'mein', 'me', 'hai', 'hain', 'tha', 'thi', 'kitna', 'kitne',
   'kitni', 'dena', 'rupaye', 'rupay', 'paise', 'paisa', 'yahan', 'ghar', 'is', 'mahine', 'din', 'ghante', 'kelasa', 'madide', 'avara',
   'avaru', 'avarige', 'alli', 'nanage', 'ivattu', 'indu', 'ninne', 'ondu',
-  'आज', 'कल', 'काम', 'किया', 'साइट', 'मुझे', 'मैंने', 'कितना', 'देना', 'है', 'रुपये', 'रुपए', 'ठेकेदार', 'मालिक', 'दिया', 'दिए',
-  'मिले', 'पर', 'में', 'ने', 'के', 'का', 'की', 'से', 'को',
-  'ಇಂದು', 'ಇವತ್ತು', 'ನಿನ್ನೆ', 'ಕೆಲಸ', 'ಸೈಟ್', 'ನನಗೆ', 'ನಾನು', 'ಎಷ್ಟು', 'ಕೊಡಬೇಕು', 'ರೂಪಾಯಿ', 'ಗುತ್ತಿಗೆದಾರ', 'ಮಾಲೀಕ', 'ಮಾಡಿದೆ',
+  'आज', 'कल', 'काम', 'किया', 'साइट', 'मुझे', 'मैंने', 'मेरे', 'मेरा', 'मेरी', 'हमारा', 'हमारी', 'कितना', 'देना', 'है', 'रुपये', 'रुपए', 'ठेकेदार', 'मालिक', 'दिया', 'दिए',
+  'मिले', 'पर', 'में', 'ने', 'के', 'का', 'की', 'से', 'को', 'नहीं', 'हाँ', 'हा', 'जी', 'ठीक',
+  'ಇಂದು', 'ಇವತ್ತು', 'ನಿನ್ನೆ', 'ಕೆಲಸ', 'ಸೈಟ್', 'ನನಗೆ', 'ನನ್ನ', 'ನಾನು', 'ಅದು', 'ಇದು', 'ಎಷ್ಟು', 'ಕೊಡಬೇಕು', 'ರೂಪಾಯಿ', 'ಗುತ್ತಿಗೆದಾರ', 'ಮಾಲೀಕ', 'ಮಾಡಿದೆ',
 ]);
 
 // Words that sit right after an employer name: "Ramesh ke", "Ramesh ne", "ರಮೇಶ್ ಅವರ", "Ramesh avara".

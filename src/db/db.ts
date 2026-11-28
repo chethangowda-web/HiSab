@@ -84,6 +84,13 @@ export async function deleteEntry(id: string): Promise<void> {
   }
 }
 
+/** Removes an employer along with all their ledger entries and any orphaned voice clips. */
+export async function deleteEmployer(id: string): Promise<void> {
+  const rows = await db.entries.where('employerId').equals(id).toArray();
+  for (const row of rows) await deleteEntry(row.id);
+  await db.employers.delete(id);
+}
+
 export async function saveClip(blob: Blob, durationMs: number): Promise<string> {
   const id = newId();
   await db.clips.put({ id, blob, mime: blob.type || 'audio/webm', durationMs, createdAt: Date.now() });

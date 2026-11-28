@@ -88,10 +88,35 @@ describe('Interactive Home & Statement Trust Receipt', () => {
     expect(await screen.findByTestId('trust-receipt-bar')).toHaveTextContent('Share verify link');
   });
 
-  it('Settings sample loader populates sample data', async () => {
+  it('Settings sample loader populates sample data and employer delete removes an accidental employer', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^settings$/i }));
     fireEvent.click(await screen.findByRole('button', { name: /load sample week/i }));
     await waitFor(async () => expect(await listEntries()).toHaveLength(4));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Ramesh' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm delete Ramesh' }));
+    await waitFor(async () => expect(await listEntries()).toHaveLength(0));
+  });
+});
+
+describe('Filler & pronoun guards for employer names', () => {
+  it('strips filler words like "Ramesh I think" and rejects pronouns like "मेरे"', async () => {
+    const { step, initialState } = await import('../src/voice/dialogue');
+    const ctx = {
+      today: '2026-11-27',
+      lang: 'en-IN' as const,
+      employers: [],
+      entries: [],
+      newId: () => 'id1',
+      now: () => 1000,
+    };
+    const r1 = step(initialState, { type: 'heard', text: '700 rupees advance', confidence: 0.9 }, ctx);
+    expect(r1.state.asking).toBe('employer');
+    const bad = step(r1.state, { type: 'heard', text: 'मेरे', confidence: 0.9 }, ctx);
+    expect(bad.state.phase).toBe('CLARIFY');
+    expect(bad.save).toBeUndefined();
+    const cleaned = step(r1.state, { type: 'heard', text: 'Ramesh I think', confidence: 0.9 }, ctx);
+    expect(cleaned.state.phase).toBe('SAVED');
+    expect(cleaned.newEmployer?.name).toBe('Ramesh');
   });
 });

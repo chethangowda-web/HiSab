@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { deleteEmployer } from '../db/db';
 import { daysWorked, totals } from '../domain/ledger';
 import { inr } from '../i18n/ui';
 import { useApp } from './AppContext';
@@ -6,13 +8,15 @@ import CallEmployer from './CallEmployer';
 import EmptyState from './EmptyState';
 
 export default function Employers({ onStatement }: { onStatement: (employerId: string) => void }) {
-  const { t, entries, employers } = useApp();
+  const { t, entries, employers, reload } = useApp();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   if (employers.length === 0) return <EmptyState icon="👷" text={t.noEmployers} />;
 
   return (
     <ul className="stagger flex flex-col gap-4">
       {employers.map((emp) => {
         const sum = totals(entries, emp.id);
+        const confirming = confirmId === emp.id;
         return (
           <li key={emp.id} data-testid="employer-card" className="card overflow-hidden p-4">
             <div className="flex items-center gap-3">
@@ -42,9 +46,35 @@ export default function Employers({ onStatement }: { onStatement: (employerId: s
                 <dd className="text-lg font-bold tabular-nums text-[#5EEAD4]">{inr(sum.payments)}</dd>
               </div>
             </dl>
-            <button type="button" onClick={() => onStatement(emp.id)} className="btn btn-primary mt-3.5 h-12 w-full">
-              📄 {t.statementBtn}
-            </button>
+            <div className="mt-3.5 flex items-center gap-2">
+              <button type="button" onClick={() => onStatement(emp.id)} className="btn btn-primary h-12 flex-1">
+                📄 {t.statementBtn}
+              </button>
+              {confirming ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label={`Confirm delete ${emp.name}`}
+                    onClick={() => void deleteEmployer(emp.id).then(reload).then(() => setConfirmId(null))}
+                    className="btn btn-danger h-12 px-4 text-sm"
+                  >
+                    {t.delete}
+                  </button>
+                  <button type="button" onClick={() => setConfirmId(null)} className="btn btn-ghost h-12 px-3 text-sm">
+                    {t.cancel}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Delete ${emp.name}`}
+                  onClick={() => setConfirmId(emp.id)}
+                  className="glass-circle h-12 w-12 shrink-0 text-sm text-[#ABA5BD] hover:text-[#FB7185]"
+                >
+                  🗑
+                </button>
+              )}
+            </div>
             <CallEmployer employer={emp} />
           </li>
         );

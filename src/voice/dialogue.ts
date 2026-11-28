@@ -6,7 +6,7 @@ import { commandMessages } from '../i18n/commands';
 import { entryLabel, messages, type Field } from '../i18n/messages';
 import { NO_WORDS, YES_WORDS } from '../nlu/lexicon';
 import { allNumbers, parseNumber, tokenize } from '../nlu/normalize';
-import { missingFields, parseUtterance, typeOf } from '../nlu/ruleParser';
+import { isNameToken, missingFields, parseUtterance, typeOf } from '../nlu/ruleParser';
 import { validateDraft } from '../nlu/validate';
 
 export type Phase = 'IDLE' | 'CLARIFY' | 'CONFIRM' | 'SAVED';
@@ -234,11 +234,17 @@ function handleClarify(state: DialogueState, text: string, ctx: DialogueCtx): St
       return proceed({ ...draft, type: t }, ctx);
     }
     case 'employer': {
-      const name = cleanName(text);
-      const first = tokenize(name)[0];
-      if (!name || name.split(' ').length > 3 || YES_WORDS.has(first) || NO_WORDS.has(first)) {
+      const raw = cleanName(text);
+      const rawTokens = tokenize(raw);
+      const first = rawTokens[0];
+      if (!raw || rawTokens.length > 4 || YES_WORDS.has(first) || NO_WORDS.has(first)) {
         return stay(m.clarify('employer'));
       }
+      const nameTokens = rawTokens.filter(isNameToken);
+      if (nameTokens.length === 0 || nameTokens.length > 3) {
+        return stay(m.clarify('employer'));
+      }
+      const name = nameTokens.join(' ');
       const lower = name.toLowerCase();
       let found = matchEmployers(name, ctx.employers);
       if (found.length === 0) {

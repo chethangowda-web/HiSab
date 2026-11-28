@@ -4,7 +4,7 @@ import { buildExportBackup } from '../domain/receipt';
 import { localISODate } from '../domain/dates';
 import { wisprConfigured } from '../voice/engine';
 import { LANGUAGES } from '../i18n/ui';
-import { db } from '../db/db';
+import { db, deleteEmployer } from '../db/db';
 import { seedSampleLedger } from '../db/seed';
 import { useApp } from './AppContext';
 import Avatar from './Avatar';
@@ -22,10 +22,11 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
 
 type EdgeStatus = 'idle' | 'checking' | 'ok' | 'sarvam' | 'down';
 
-/** One employer's usual daily rate; saved when the field loses focus, ignored if not a valid amount. */
+/** One employer's usual daily rate; saved when the field loses focus, plus quick delete for accidental names. */
 function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }) {
   const { t, reload } = useApp();
   const [value, setValue] = useState(rate ? String(rate) : '');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => setValue(rate ? String(rate) : ''), [rate]);
   const save = async () => {
     const n = Number(value.trim());
@@ -39,11 +40,11 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
     }
   };
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 well p-2.5">
+    <li className="flex flex-wrap items-center gap-x-2.5 gap-y-2 well p-2.5">
       <Avatar name={name} size="h-10 w-10 text-lg" />
-      <span className="min-w-[7rem] flex-1 text-lg font-bold text-[#F5F3FA]">{name}</span>
+      <span className="min-w-[6rem] flex-1 text-lg font-bold text-[#F5F3FA]">{name}</span>
       {/* wraps to its own line on narrow screens instead of squeezing the name */}
-      <span className="ml-auto flex items-center gap-2">
+      <span className="ml-auto flex items-center gap-1.5">
         <span className="text-lg font-bold text-[#ABA5BD]">₹</span>
         <input
           aria-label={`${name} ${t.dailyRateAria}`}
@@ -55,6 +56,25 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
           className="input w-24 text-right text-xl font-bold tabular-nums"
         />
         <span className="text-sm text-[#ABA5BD]">{t.perDayUnit}</span>
+        {confirmDelete ? (
+          <button
+            type="button"
+            aria-label={`Confirm delete ${name}`}
+            onClick={() => void deleteEmployer(id).then(reload)}
+            className="btn btn-danger h-10 px-3 text-xs"
+          >
+            {t.delete}
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={`Delete ${name}`}
+            onClick={() => setConfirmDelete(true)}
+            className="glass-circle h-10 w-10 text-sm text-[#ABA5BD] hover:text-[#FB7185]"
+          >
+            ✕
+          </button>
+        )}
       </span>
     </li>
   );
