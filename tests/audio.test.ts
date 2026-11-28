@@ -88,3 +88,53 @@ describe('SilenceDetector: stop after the user finishes speaking', () => {
     expect(feed(d, Array(200).fill(0.3))).toEqual({ result: 'stop', at: 15000 });
   });
 });
+
+describe('SilenceDetector: adaptive to room noise', () => {
+  const run = (d: SilenceDetector, levels: number[], stepMs = 100) => {
+    let t = 0;
+    for (const l of levels) {
+      t += stepMs;
+      const r = d.feed(l, t);
+      if (r !== 'continue') return { result: r, at: t };
+    }
+    return { result: 'continue' as const, at: t };
+  };
+  const opts = { threshold: 0.012, silenceMs: 1400, noSpeechMs: 10000, maxMs: 25000, adaptive: true };
+
+  it('does not mistake steady background noise for speech', () => {
+    // noise at 0.02 is above the minimum threshold but is the room's floor: 2.5 x 0.02 = 0.05
+    expect(run(new SilenceDetector(opts), Array(60).fill(0.02))).toEqual({ result: 'continue', at: 6000 });
+    expect(run(new SilenceDetector(opts), Array(110).fill(0.02))).toEqual({ result: 'no_speech', at: 10000 });
+  });
+
+  it('hears normal speech over that noise and stops 1.4 s after it ends', () => {
+    const levels = [...Array(5).fill(0.02), ...Array(10).fill(0.3), ...Array(30).fill(0.02)];
+    expect(run(new SilenceDetector(opts), levels)).toEqual({ result: 'stop', at: 1500 + 1400 });
+  });
+
+  it('keeps speech that starts right away (inside the calibration window)', () => {
+    const levels = [...Array(8).fill(0.3), ...Array(30).fill(0.001)];
+    const r = run(new SilenceDetector(opts), levels);
+    expect(r.result).toBe('stop');
+    expect(r.at).toBe(800 + 1400);
+  });
+
+  it('a quick one-word answer at the very start is still counted as speech', () => {
+    const levels = [0.3, 0.3, 0.3, ...Array(40).fill(0.001)];
+    expect(run(new SilenceDetector(opts), levels).result).toBe('stop');
+  });
+
+  it('waits through a 1.2 s mid-sentence pause', () => {
+    const levels = [...Array(10).fill(0.3), ...Array(12).fill(0.001), ...Array(10).fill(0.3)];
+    expect(run(new SilenceDetector(opts), levels).result).toBe('continue');
+  });
+
+  it('allows long answers up to 25 s', () => {
+    expect(run(new SilenceDetector(opts), Array(300).fill(0.3))).toEqual({ result: 'stop', at: 25000 });
+  });
+
+  it('is off by default, so existing behaviour is unchanged', () => {
+    expect(run(new SilenceDetector(), Array(60).fill(0.03)).result).toBe('continue');
+    expect(run(new SilenceDetector({ noSpeechMs: 6000 }), Array(70).fill(0))).toEqual({ result: 'no_speech', at: 6000 });
+  });
+});

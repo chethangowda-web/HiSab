@@ -68,31 +68,64 @@ export async function askSarvamMulti(
   return callSarvamChat(cfg, buildMultiMessages(req), 2500, fetchImpl, timeoutMs);
 }
 
-/** Transcribes a 16 kHz mono WAV recording using Sarvam Saaras v4 in codemix mode. */
-export async function transcribeWithSarvam(
+export interface SarvamTranscript {
+  text: string;
+  /** BCP-47 code Sarvam detected (e.g. hi-IN), when it reports one. */
+  lang?: string;
+  langProbability?: number;
+}
+
+const MAX_KEYTERMS = 50;
+const MAX_KEYTERM_CHARS = 64;
+
+async function postStt(
   apiKey: string,
   req: TranscribeRequest,
-  fetchImpl: typeof fetch = fetch,
-  timeoutMs = 25000,
-): Promise<string> {
+  languageCode: string,
+  withKeyterms: boolean,
+  fetchImpl: typeof fetch,
+  timeoutMs: number,
+): Promise<Response> {
   const bytes = Buffer.from(req.audio, 'base64');
   const form = new FormData();
   form.append('file', new Blob([bytes], { type: 'audio/wav' }), 'audio.wav');
   form.append('model', DEFAULT_SARVAM_STT_MODEL);
-  form.append('language_code', req.lang);
+  form.append('language_code', languageCode);
   form.append('mode', 'codemix');
-
-  const res = await fetchImpl(SARVAM_STT_URL, {
+  if (withKeyterms) {
+    const terms = Array.from(new Set((req.names ?? []).map((n) => n.trim()).filter((n) => n && n.length <= MAX_KEYTERM_CHARS))).slice(0, MAX_KEYTERMS);
+    // Sarvam requires one field holding a JSON array of strings.
+    if (terms.length) form.append('keyterms', JSON.stringify(terms));
+  }
+  return fetchImpl(SARVAM_STT_URL, {
     method: 'POST',
     headers: { 'api-subscription-key': apiKey },
     body: form,
     signal: AbortSignal.timeout(timeoutMs),
   });
+}
+
+/**
+ * Transcribes a 16 kHz mono WAV recording using Sarvam Saaras v4 in codemix mode.
+ * The language is auto-detected (`unknown`), so the user can speak any supported language;
+ * if Sarvam rejects that with a 400, it retries once with the app's selected language.
+ */
+export async function transcribeWithSarvam(
+  apiKey: string,
+  req: TranscribeRequest,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = 25000,
+): Promise<SarvamTranscript> {
+  let res = await postStt(apiKey, req, 'unknown', true, fetchImpl, timeoutMs);
+  if (res.status === 400) res = await postStt(apiKey, req, req.lang, false, fetchImpl, timeoutMs);
   if (!res.ok) throw new Error(`sarvam stt status ${res.status}`);
-  const data = (await res.json()) as { transcript?: unknown };
+  const data = (await res.json()) as { transcript?: unknown; language_code?: unknown; language_probability?: unknown };
   const text = typeof data?.transcript === 'string' ? data.transcript.trim() : '';
   if (!text) throw new Error('sarvam stt returned no transcript');
-  return text;
+  const out: SarvamTranscript = { text };
+  if (typeof data.language_code === 'string' && data.language_code) out.lang = data.language_code;
+  if (typeof data.language_probability === 'number' && Number.isFinite(data.language_probability)) out.langProbability = data.language_probability;
+  return out;
 }
 
 export const SARVAM_TTS_URL = 'https://api.sarvam.ai/text-to-speech';

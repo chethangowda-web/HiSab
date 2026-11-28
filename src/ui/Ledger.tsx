@@ -24,11 +24,11 @@ export default function Ledger() {
   const today = localISODate();
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="stagger flex flex-col gap-5">
       {groups.map((g) => (
         <section key={g.date}>
           <h3 className="eyebrow mb-2.5 px-1">{friendlyDate(lang, g.date, today)}</h3>
-          <ul className="flex flex-col gap-2.5">
+          <ul className="stagger flex flex-col gap-2.5">
             {g.rows.map((e) => (
               <LedgerRow key={e.id} entry={e} employerName={name(e.employerId)} />
             ))}

@@ -41,48 +41,48 @@ export default function ConfirmCard({ draft, clip, onYes, onNo }: { draft: Draft
 
   return (
     <section data-testid="confirm-card" className="card w-full overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[#EADFCB] bg-[#FDEEDE] px-5 py-3">
+      <div className="flex items-center justify-between border-b border-white/10 bg-[#FF7A2F]/15 px-5 py-3">
         <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl">
+          <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-2xl">
             {style.icon}
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#6B6259]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#ABA5BD]">
               {typeLabel(lang, draft.type)}
               {draft.hours !== undefined ? ` · ${draft.hours} ${t.hoursUnit}` : ''}
             </p>
-            <p className="break-words text-xl font-extrabold text-[#1C1917]">{draft.employerName}</p>
+            <p className="break-words text-xl font-extrabold text-[#F5F3FA]">{draft.employerName}</p>
           </div>
         </div>
-        {days === 1 && <p className="text-xs font-bold text-[#6B6259]">{friendlyDate(lang, draft.date ?? today, today)}</p>}
+        {days === 1 && <p className="text-xs font-bold text-[#ABA5BD]">{friendlyDate(lang, draft.date ?? today, today)}</p>}
       </div>
 
       <div className="p-5">
         {days > 1 && (
           <div className="mb-3 flex flex-wrap gap-1.5">
             {dates.map((d) => (
-              <span key={d} data-testid="day-chip" className="rounded-full bg-[#F3ECDD] px-3 py-1 text-sm font-semibold text-[#1C1917]">
+              <span key={d} data-testid="day-chip" className="rounded-full bg-white/[0.06] px-3 py-1 text-sm font-semibold text-[#F5F3FA]">
                 {friendlyDate(lang, d, today).replace(/ \d{4}$/, '')}
               </span>
             ))}
           </div>
         )}
         {days > 1 && (
-          <p className="text-lg font-semibold text-[#6B6259] tabular-nums">
+          <p className="text-lg font-semibold text-[#ABA5BD] tabular-nums">
             {days} × {inr(draft.amount)}
           </p>
         )}
         <p className={`text-5xl font-extrabold tracking-tight tabular-nums ${style.amount}`}>{inr(draft.amount * days)}</p>
 
         {draft.amountFrom === 'rate' && (
-          <p className="mt-3 flex items-center gap-2 rounded-2xl bg-[#FDEEDE] px-3.5 py-2.5 text-sm font-semibold text-[#9A3F06]">
+          <p className="mt-3 flex items-center gap-2 rounded-2xl bg-[#FF7A2F]/15 px-3.5 py-2.5 text-sm font-semibold text-[#FFB27A]">
             <span aria-hidden="true">⭐</span>
             {inr(draft.amount)} = {t.usualRateOf.replace('{name}', draft.employerName ?? '')}
           </p>
         )}
 
         {clip && (
-          <p data-testid="clip-preview" className="mt-3 flex items-center gap-3 well px-3.5 py-2.5 text-[#1C1917]">
+          <p data-testid="clip-preview" className="mt-3 flex items-center gap-3 well px-3.5 py-2.5 text-[#F5F3FA]">
             <ClipButton blob={clip} />
             <span className="font-bold">🎙 {t.voiceProof}</span>
           </p>

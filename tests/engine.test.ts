@@ -19,10 +19,22 @@ describe('wisprConfigured', () => {
 describe('transcribeRecording', () => {
   it('posts WAV audio, language and employer names; returns the text', async () => {
     const f = json({ text: ' Ramesh ne 500 diye ' });
-    expect(await transcribeRecording(rec, 'hi-IN', ['Ramesh'], f as unknown as typeof fetch, toWav)).toBe('Ramesh ne 500 diye');
+    expect(await transcribeRecording(rec, 'hi-IN', ['Ramesh'], f as unknown as typeof fetch, toWav)).toEqual({ text: 'Ramesh ne 500 diye' });
     const [url, init] = (f.mock.calls as unknown as [string, RequestInit][])[0];
     expect(url).toBe('/api/transcribe');
     expect(JSON.parse(init.body as string)).toEqual({ audio: 'UklGRg==', lang: 'hi-IN', names: ['Ramesh'] });
+  });
+  it('returns the detected language when it is one of the app languages', async () => {
+    const f = json({ text: 'ನಾನು ರಮೇಶ್ ಹತ್ತಿರ ಕೆಲಸ ಮಾಡಿದೆ', lang: 'kn-IN', langProbability: 0.93 });
+    expect(await transcribeRecording(rec, 'en-IN', [], f as unknown as typeof fetch, toWav)).toEqual({
+      text: 'ನಾನು ರಮೇಶ್ ಹತ್ತಿರ ಕೆಲಸ ಮಾಡಿದೆ',
+      lang: 'kn-IN',
+      langProbability: 0.93,
+    });
+  });
+  it('ignores languages the app does not support (the selected language stays)', async () => {
+    const f = json({ text: 'vanakkam', lang: 'ta-IN', langProbability: 0.99 });
+    expect(await transcribeRecording(rec, 'en-IN', [], f as unknown as typeof fetch, toWav)).toEqual({ text: 'vanakkam', langProbability: 0.99 });
   });
   it.each([
     ['server error', json({ error: 'x' }, 502)],

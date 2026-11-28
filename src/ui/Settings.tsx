@@ -11,7 +11,7 @@ import Switch from './Switch';
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="card flex flex-col gap-3 p-4">
-      <h2 className="text-lg font-extrabold text-[#1C1917]">{title}</h2>
+      <h2 className="text-lg font-extrabold text-[#F5F3FA]">{title}</h2>
       {children}
     </section>
   );
@@ -38,10 +38,10 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-2 well p-2.5">
       <Avatar name={name} size="h-10 w-10 text-lg" />
-      <span className="min-w-[7rem] flex-1 text-lg font-bold text-[#1C1917]">{name}</span>
+      <span className="min-w-[7rem] flex-1 text-lg font-bold text-[#F5F3FA]">{name}</span>
       {/* wraps to its own line on narrow screens instead of squeezing the name */}
       <span className="ml-auto flex items-center gap-2">
-        <span className="text-lg font-bold text-[#6B6259]">₹</span>
+        <span className="text-lg font-bold text-[#ABA5BD]">₹</span>
         <input
           aria-label={`${name} ${t.dailyRateAria}`}
           inputMode="numeric"
@@ -51,7 +51,7 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
           onKeyDown={(ev) => ev.key === 'Enter' && (ev.target as HTMLInputElement).blur()}
           className="input w-24 text-right text-xl font-bold tabular-nums"
         />
-        <span className="text-sm text-[#6B6259]">{t.perDayUnit}</span>
+        <span className="text-sm text-[#ABA5BD]">{t.perDayUnit}</span>
       </span>
     </li>
   );
@@ -90,7 +90,7 @@ export default function Settings() {
   return (
     <div className="flex flex-col gap-4">
       <Card title={t.language}>
-        <p className="text-sm text-[#6B6259]">{t.languageHelp}</p>
+        <p className="text-sm text-[#ABA5BD]">{t.languageHelp}</p>
         <div className="grid grid-cols-1 gap-2">
           {LANGUAGES.map((l) => (
             <button
@@ -133,10 +133,10 @@ export default function Settings() {
       <Card title={t.voiceEngineTitle}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="flex items-center gap-2 text-lg font-bold text-[#1C1917]">
+            <p className="flex items-center gap-2 text-lg font-bold text-[#F5F3FA]">
               <WisprMark /> Wispr Flow
             </p>
-            <p role="status" className={wispr === 'ok' ? 'text-sm font-semibold text-[#166534]' : 'text-sm text-[#6B6259]'}>
+            <p role="status" className={wispr === 'ok' ? 'text-sm font-semibold text-[#6EE7A8]' : 'text-sm text-[#ABA5BD]'}>
               {wispr === 'checking' ? t.edgeChecking : wispr === 'ok' ? t.wisprOk : t.wisprMissing}
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function Settings() {
 
       <Card title={t.keepProofTitle}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#6B6259]">{t.keepProofHelp}</p>
+          <p className="text-sm text-[#ABA5BD]">{t.keepProofHelp}</p>
           <Switch checked={keepProof} onChange={setKeepProof} label={t.keepProofTitle} />
         </div>
       </Card>
@@ -158,13 +158,13 @@ export default function Settings() {
               <RateRow key={e.id} id={e.id} name={e.name} rate={e.dailyRate} />
             ))}
           </ul>
-          <p className="text-sm text-[#6B6259]">{t.ratesHelp}</p>
+          <p className="text-sm text-[#ABA5BD]">{t.ratesHelp}</p>
         </Card>
       )}
 
       <Card title={t.edgeLabel}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#6B6259]">{t.edgeHelp}</p>
+          <p className="text-sm text-[#ABA5BD]">{t.edgeHelp}</p>
           <Switch checked={edgeMode} onChange={setEdgeMode} label={t.edgeLabel} />
         </div>
         {edge !== 'idle' && (
@@ -172,10 +172,10 @@ export default function Settings() {
             role="status"
             className={`rounded-2xl px-3.5 py-2.5 text-sm font-semibold ${
               edge === 'ok' || edge === 'sarvam'
-                ? 'border border-[#BFE3C8] bg-[#E6F4EA] text-[#166534]'
+                ? 'border border-emerald-300/30 bg-emerald-400/12 text-[#6EE7A8]'
                 : edge === 'down'
-                  ? 'border border-[#F2D08A] bg-[#FEF3C7] text-[#92400E]'
-                  : 'bg-[#F3ECDD] text-[#6B6259]'
+                  ? 'border border-amber-300/30 bg-amber-300/12 text-[#FCD34D]'
+                  : 'bg-white/[0.06] text-[#ABA5BD]'
             }`}
           >
             {edge === 'checking' ? t.edgeChecking : edge === 'sarvam' ? t.edgeSarvamOk : edge === 'ok' ? t.edgeOk : t.edgeDown}

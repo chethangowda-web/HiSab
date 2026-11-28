@@ -1,5 +1,6 @@
 import type { Employer, Entry, Intent } from './types';
 import { balance, daysWorked, earned, totals } from './ledger';
+import { sameNameAcrossScripts } from './nameKey';
 
 export type QueryResult = {
   key: 'owed' | 'earned' | 'advances' | 'days' | 'unknown_employer' | 'ambiguous_employer';
@@ -14,7 +15,10 @@ export function matchEmployers(name: string, employers: Employer[]): Employer[] 
   const n = name.trim().toLowerCase();
   const exact = employers.filter((e) => e.name.toLowerCase() === n);
   if (exact.length) return exact;
-  return employers.filter((e) => e.name.toLowerCase().startsWith(n));
+  const prefix = employers.filter((e) => e.name.toLowerCase().startsWith(n));
+  if (prefix.length) return prefix;
+  // Same name spoken in another language ("रमेश" for a saved "Ramesh").
+  return employers.filter((e) => sameNameAcrossScripts(name.trim(), e.name));
 }
 
 export function answerQuery(

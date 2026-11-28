@@ -74,6 +74,9 @@ export interface UiText {
   moreActions: string;
   welcomeTitle: string;
   welcomeText: string;
+  namaste: string;
+  askToday: string;
+  tapOrb: string;
   byEmployer: string;
   loading: string;
   hoursUnit: string;
@@ -180,6 +183,9 @@ const en: UiText = {
   moreActions: 'Options',
   welcomeTitle: 'Welcome!',
   welcomeText: 'Say what work you did or what you were paid. BoliHisab keeps your hisab, so nobody can forget or dispute it.',
+  namaste: 'Namaste',
+  askToday: 'What did you work on today?',
+  tapOrb: 'Tap the orb or the mic and just speak',
   byEmployer: 'By employer',
   loading: 'Loading…',
   hoursUnit: 'h',
@@ -285,6 +291,9 @@ const hi: UiText = {
   moreActions: 'विकल्प',
   welcomeTitle: 'स्वागत है!',
   welcomeText: 'बोलकर बताइए कि आपने क्या काम किया या कितने पैसे मिले। बोलीहिसाब आपका हिसाब रखता है, ताकि कोई भूल या झगड़ा न हो।',
+  namaste: 'नमस्ते',
+  askToday: 'आज आपने क्या काम किया?',
+  tapOrb: 'गोले या माइक को दबाकर बस बोलिए',
   byEmployer: 'मालिक के हिसाब से',
   loading: 'लोड हो रहा है…',
   hoursUnit: 'घं',
@@ -390,6 +399,9 @@ const kn: UiText = {
   moreActions: 'ಆಯ್ಕೆಗಳು',
   welcomeTitle: 'ಸ್ವಾಗತ!',
   welcomeText: 'ನೀವು ಮಾಡಿದ ಕೆಲಸ ಅಥವಾ ಸಿಕ್ಕ ಹಣವನ್ನು ಹೇಳಿ. ಬೋಲಿಹಿಸಾಬ್ ನಿಮ್ಮ ಲೆಕ್ಕ ಇಡುತ್ತದೆ, ಯಾರೂ ಮರೆಯುವುದಿಲ್ಲ, ವಾದ ಮಾಡುವುದಿಲ್ಲ.',
+  namaste: 'ನಮಸ್ಕಾರ',
+  askToday: 'ಇಂದು ನೀವು ಯಾವ ಕೆಲಸ ಮಾಡಿದ್ರಿ?',
+  tapOrb: 'ಗೋಳ ಅಥವಾ ಮೈಕ್ ಒತ್ತಿ, ಮಾತನಾಡಿ',
   byEmployer: 'ಮಾಲೀಕರ ಪ್ರಕಾರ',
   loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
   hoursUnit: 'ಗಂ',

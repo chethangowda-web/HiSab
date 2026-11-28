@@ -118,18 +118,61 @@ describe('Sarvam Speech-to-Text fallback', () => {
     expect(await res.json()).toEqual({ wispr: false, sarvamStt: true, sarvamTts: true });
   });
 
-  it('transcribes audio via Sarvam saaras:v4 when Wispr key is absent', async () => {
-    const up = vi.fn(async () => new Response(JSON.stringify({ transcript: 'Ramesh ke yahan 700 kaam kiya' }), { status: 200 }));
-    const base = await start(up as unknown as typeof fetch, 'sk-sarvam-secret');
-    const res = await fetch(`${base}/api/transcribe`, {
+  const transcribe = (base: string, extra: Record<string, unknown> = {}) =>
+    fetch(`${base}/api/transcribe`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ audio: 'UklGRg==', lang: 'hi-IN', names: ['Ramesh'] }),
+      body: JSON.stringify({ audio: 'UklGRg==', lang: 'hi-IN', names: ['Ramesh'], ...extra }),
     });
+  const fields = (init: RequestInit) => Array.from((init.body as FormData).entries());
+
+  it('transcribes audio via Sarvam saaras:v4 with language auto-detect, and returns the detected language', async () => {
+    const up = vi.fn(async () => new Response(JSON.stringify({ transcript: 'Ramesh ke yahan 700 kaam kiya', language_code: 'hi-IN', language_probability: 0.96 }), { status: 200 }));
+    const base = await start(up as unknown as typeof fetch, 'sk-sarvam-secret');
+    const res = await transcribe(base, { lang: 'en-IN' });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ text: 'Ramesh ke yahan 700 kaam kiya' });
+    expect(await res.json()).toEqual({ text: 'Ramesh ke yahan 700 kaam kiya', lang: 'hi-IN', langProbability: 0.96 });
     const [url, init] = (up.mock.calls as unknown as [string, RequestInit][])[0];
     expect(url).toBe(SARVAM_STT_URL);
     expect((init.headers as Record<string, string>)['api-subscription-key']).toBe('sk-sarvam-secret');
+    const f = fields(init);
+    expect(f).toContainEqual(['model', 'saaras:v4']);
+    expect(f).toContainEqual(['language_code', 'unknown']);
+    expect(f).toContainEqual(['mode', 'codemix']);
+    expect(f).toContainEqual(['keyterms', JSON.stringify(['Ramesh'])]);
+  });
+
+  it('omits lang when Sarvam does not report one, and caps keyterms (50 terms, 64 chars, no blanks)', async () => {
+    const up = vi.fn(async () => new Response(JSON.stringify({ transcript: 'hello there friend' }), { status: 200 }));
+    const base = await start(up as unknown as typeof fetch);
+    const names = [...Array.from({ length: 60 }, (_, i) => `Name${i}`), '  ', 'x'.repeat(65)];
+    const res = await transcribe(base, { names: names.slice(0, 60) });
+    expect(await res.json()).toEqual({ text: 'hello there friend' });
+    const [, init] = (up.mock.calls as unknown as [string, RequestInit][])[0];
+    const kt = fields(init).filter(([k]) => k === 'keyterms');
+    expect(kt).toHaveLength(1);
+    expect(JSON.parse(String(kt[0][1]))).toHaveLength(50);
+  });
+
+  it('retries once with the selected language (no keyterms) if auto-detect is rejected with 400', async () => {
+    const up = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('bad', { status: 400 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ transcript: 'ಕೆಲಸ ಮಾಡಿದೆ ನಾನು' }), { status: 200 }));
+    const base = await start(up as unknown as typeof fetch);
+    const res = await transcribe(base, { lang: 'kn-IN' });
+    expect(await res.json()).toEqual({ text: 'ಕೆಲಸ ಮಾಡಿದೆ ನಾನು' });
+    expect(up).toHaveBeenCalledTimes(2);
+    const f = fields((up.mock.calls as unknown as [string, RequestInit][])[1][1]);
+    expect(f).toContainEqual(['language_code', 'kn-IN']);
+    expect(f.some(([k]) => k === 'keyterms')).toBe(false);
+  });
+
+  it('502 when Sarvam fails, without leaking the key', async () => {
+    const up = vi.fn(async () => new Response('nope', { status: 500 }));
+    const base = await start(up as unknown as typeof fetch, 'sk-sarvam-secret');
+    const res = await transcribe(base);
+    expect(res.status).toBe(502);
+    expect(await res.text()).not.toContain('sk-sarvam-secret');
   });
 });

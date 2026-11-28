@@ -78,8 +78,12 @@ export async function placeCall(
     }),
     signal: AbortSignal.timeout(timeoutMs),
   });
-  // Never include the response body or numbers in the error: it must be safe to surface.
-  if (!res.ok) throw new Error(`vobiz status ${res.status}`);
+  if (!res.ok) {
+    // Log a short reason for the operator (digits and tokens masked); the thrown error stays generic.
+    const detail = (await res.text().catch(() => '')).replace(/\+?\d[\d\s-]{5,}\d/g, '***').replace(/\s+/g, ' ').slice(0, 200);
+    console.error(`vobiz call failed: status ${res.status} ${detail}`);
+    throw new Error(`vobiz status ${res.status}`);
+  }
 }
 
 /** Simple in-memory sliding-window limiter. */

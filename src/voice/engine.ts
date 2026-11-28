@@ -35,9 +35,23 @@ export async function recordingToWavBase64(blob: Blob): Promise<string> {
   }
 }
 
+/** What the server heard. `lang` is set only when the speech engine detected one of the app's languages. */
+export interface Transcription {
+  text: string;
+  lang?: Lang;
+  langProbability?: number;
+}
+
+const APP_LANGS: readonly Lang[] = ['en-IN', 'hi-IN', 'kn-IN'];
+/** Maps an engine's language code to an app language; other languages (ta-IN...) are left undetected. */
+export function appLangOf(code: unknown): Lang | undefined {
+  return typeof code === 'string' ? APP_LANGS.find((l) => l === code) : undefined;
+}
+
 /**
- * Sends a recording to Wispr Flow through our server, with the employer names as a dictionary.
- * Returns the text, or null on any failure (the caller then falls back to browser speech).
+ * Sends a recording to our server (Wispr Flow or Sarvam), with the employer names as a dictionary.
+ * Returns the text and, when detected, the spoken language; or null on any failure
+ * (the caller then asks again or falls back to browser speech).
  */
 export async function transcribeRecording(
   rec: Recording,
@@ -45,7 +59,7 @@ export async function transcribeRecording(
   names: string[],
   fetchImpl: typeof fetch = fetch,
   toWav: (blob: Blob) => Promise<string> = recordingToWavBase64,
-): Promise<string | null> {
+): Promise<Transcription | null> {
   try {
     const audio = await toWav(rec.blob);
     const res = await fetchImpl('/api/transcribe', {
@@ -54,8 +68,13 @@ export async function transcribeRecording(
       body: JSON.stringify({ audio, lang, names: names.slice(0, 100) }),
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { text?: unknown };
-    return typeof data?.text === 'string' && data.text.trim() ? data.text.trim() : null;
+    const data = (await res.json()) as { text?: unknown; lang?: unknown; langProbability?: unknown };
+    if (typeof data?.text !== 'string' || !data.text.trim()) return null;
+    const out: Transcription = { text: data.text.trim() };
+    const detected = appLangOf(data.lang);
+    if (detected) out.lang = detected;
+    if (typeof data.langProbability === 'number' && Number.isFinite(data.langProbability)) out.langProbability = data.langProbability;
+    return out;
   } catch {
     return null;
   }

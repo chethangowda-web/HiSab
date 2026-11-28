@@ -97,7 +97,7 @@ export function createApp(cfg: ModelConfig, fetchImpl: typeof fetch = fetch, voi
             if (!cfg.sarvamKey) throw new Error('wispr failed');
           }
         }
-        return send(res, 200, { text: await transcribeWithSarvam(cfg.sarvamKey!, body as TranscribeRequest, fetchImpl) });
+        return send(res, 200, await transcribeWithSarvam(cfg.sarvamKey!, body as TranscribeRequest, fetchImpl));
       } catch {
         return send(res, 502, { error: 'Speech transcription failed' });
       }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { db, deleteEntry, newId } from '../db/db';
 import { localISODate } from '../domain/dates';
-import type { Draft, Entry } from '../domain/types';
+import type { Draft, Entry, Lang } from '../domain/types';
 import { inr } from '../i18n/ui';
 import { parseMultiUtterance, parseWithFallback } from '../nlu/llmParser';
 import { moneyAmounts } from '../nlu/normalize';
@@ -17,10 +17,14 @@ import {
 } from '../voice/dialogue';
 import { saveClip } from '../db/db';
 import { transcribeRecording, wisprConfigured } from '../voice/engine';
+import { shouldSwitchLanguage } from '../voice/language';
 import { canRecord, startRecorder, type Recording, type RecorderSession } from '../voice/recorder';
 import { abortListening, isSpeechSupported, listen, stopListening } from '../voice/speechInput';
 import { speak } from '../voice/speechOutput';
 import { useApp } from './AppContext';
+
+/** A short gap after the app finishes speaking, so the microphone does not pick up the end of its own voice. */
+const AFTER_SPEECH_GAP_MS = import.meta.env.MODE === 'test' ? 0 : 300;
 
 /** How long the "Saved · Undo" bar stays on screen. */
 const SAVED_BAR_MS = 8000;
@@ -116,6 +120,11 @@ export function useDialogue(): UseDialogue {
   const queuedDrafts = useRef<Draft[]>([]);
   /** Cached server STT detection so mic tap starts recording with 0ms preflight delay. */
   const cachedServerStt = useRef<'wispr' | 'sarvam' | 'browser' | null>(null);
+  /** The language just heard, used straight away: the app language state only catches up on the next render. */
+  const activeLang = useRef<Lang | null>(null);
+  useEffect(() => {
+    activeLang.current = null;
+  }, [app.lang]);
   const [view, setView] = useState<DialogueView>(INITIAL_VIEW);
 
   const detectServerStt = useCallback(async (useWispr: boolean): Promise<'wispr' | 'sarvam' | 'browser'> => {
@@ -168,11 +177,12 @@ export function useDialogue(): UseDialogue {
 
   /** Runs one dialogue turn: step, persist if the user confirmed, speak, and (after voice) keep listening. */
   const run = useCallback(
-    async (input: DialogueEvent, viaVoice: boolean, audio?: Recording) => {
+    async (input: DialogueEvent, viaVoice: boolean, audio?: Recording, langOverride?: Lang) => {
       const a = latest.current;
+      const lang = langOverride ?? activeLang.current ?? a.lang;
       const ctx: DialogueCtx = {
         today: localISODate(),
-        lang: a.lang,
+        lang,
         employers: a.employers,
         entries: a.entries,
         newId,
@@ -193,7 +203,7 @@ export function useDialogue(): UseDialogue {
       // Edge mode: when the rules cannot fully understand a sentence, Sarvam 105B / local model may help.
       if (input.type === 'heard' && a.edgeMode && input.text.trim() && input.confidence >= CONFIDENCE_MIN && state.current.phase !== 'CLARIFY') {
         if (mounted.current) setView((v) => ({ ...v, thinking: true }));
-        const parseCtx = { today: ctx.today, employers: a.employers.map((e) => e.name), lang: a.lang };
+        const parseCtx = { today: ctx.today, employers: a.employers.map((e) => e.name), lang };
         let parsed = await parseWithFallback(input.text, parseCtx, { enabled: true });
         if (parsed.kind === 'unknown' && new Set(moneyAmounts(input.text)).size > 1) {
           const multi = await parseMultiUtterance(input.text, parseCtx, { enabled: true });
@@ -290,7 +300,7 @@ export function useDialogue(): UseDialogue {
           needTyping: nextR.needTyping ?? false,
         }));
         if (activePhase === 'CLARIFY' || activePhase === 'CONFIRM') {
-          if (nextR.speak) await speak(nextR.speak, a.lang);
+          if (nextR.speak) await speak(nextR.speak, lang);
           break;
         }
       }
@@ -298,18 +308,19 @@ export function useDialogue(): UseDialogue {
       // Hands-free: only await TTS when we are about to open the mic again for a follow-up answer.
       const expectsAnswer = activePhase === 'CLARIFY' || activePhase === 'CONFIRM';
       if (expectsAnswer) {
-        if (r.speak) await speak(r.speak, a.lang);
+        if (r.speak) await speak(r.speak, lang);
         if (viaVoice && !activeNeedTyping && mounted.current && (isSpeechSupported() || canRecord())) {
-          await listenRef.current();
+          if (AFTER_SPEECH_GAP_MS) await new Promise<void>((res) => setTimeout(res, AFTER_SPEECH_GAP_MS));
+          if (mounted.current) await listenRef.current();
         }
       } else if (r.speak) {
-        void speak(r.speak, a.lang);
+        void speak(r.speak, lang);
       }
     },
     [clearSaved],
   );
 
-  type Heard = { text: string; confidence: number; audio?: Recording };
+  type Heard = { text: string; confidence: number; audio?: Recording; lang?: Lang; langProbability?: number };
 
   /** Phone speech (live words), recording a proof clip alongside when possible. */
   const captureWithBrowser = async (): Promise<Heard | null> => {
@@ -343,7 +354,11 @@ export function useDialogue(): UseDialogue {
   const captureWithServer = async (kind: 'wispr' | 'sarvam'): Promise<Heard | null | 'failed'> => {
     const a = latest.current;
     if (mounted.current) setView((v) => ({ ...v, engine: kind }));
-    const s = await startRecorder({ autoStop: true, silence: { threshold: 0.01, silenceMs: 850 } });
+    // Wait out short pauses mid-sentence (1.4 s), adapt to room noise, and allow long answers.
+    const s = await startRecorder({
+      autoStop: true,
+      silence: { threshold: 0.012, silenceMs: 1400, noSpeechMs: 10000, maxMs: 25000, adaptive: true },
+    });
     session.current = s;
     watchLevel(s);
     const rec = await s.result;
@@ -351,9 +366,9 @@ export function useDialogue(): UseDialogue {
     clearInterval(levelTimer.current);
     if (!rec) return s.cancelledByUser() ? null : { text: '', confidence: 0 };
     if (mounted.current) setView((v) => ({ ...v, thinking: true }));
-    const text = await transcribeRecording(rec, a.lang, a.employers.map((e) => e.name));
+    const heard = await transcribeRecording(rec, activeLang.current ?? a.lang, a.employers.map((e) => e.name));
     if (mounted.current) setView((v) => ({ ...v, thinking: false }));
-    return text ? { text, confidence: 0.9, audio: rec } : 'failed';
+    return heard ? { text: heard.text, confidence: 0.9, audio: rec, lang: heard.lang, langProbability: heard.langProbability } : 'failed';
   };
 
   const listenTurn = useCallback(async () => {
@@ -366,8 +381,14 @@ export function useDialogue(): UseDialogue {
       const serverKind = canRecord() ? await detectServerStt(a.useWispr) : 'browser';
       let result: Heard | null | 'failed' = serverKind !== 'browser' ? await captureWithServer(serverKind) : 'failed';
       if (result === 'failed') {
-        if (serverKind === 'wispr' && mounted.current) setView((v) => ({ ...v, wisprFailed: true, phrase: a.t.wisprFallback }));
-        result = userCancelled.current ? null : await captureWithBrowser();
+        if (userCancelled.current) result = null;
+        else if (serverKind === 'sarvam') {
+          // Nothing usable was heard: let the dialogue say "please say it again" in the user's language.
+          result = { text: '', confidence: 0 };
+        } else {
+          if (serverKind === 'wispr' && mounted.current) setView((v) => ({ ...v, wisprFailed: true, phrase: a.t.wisprFallback }));
+          result = await captureWithBrowser();
+        }
       }
       heard = result;
     } catch (e) {
@@ -384,7 +405,15 @@ export function useDialogue(): UseDialogue {
     if (!mounted.current) return;
     setView((v) => ({ ...v, listening: false, micIssue: '', interim: '', level: 0, engine: undefined }));
     if (heard === null) return; // the user pressed Cancel
-    await run({ type: 'heard', text: heard.text, confidence: heard.confidence }, true, heard.audio);
+    // Reply in the language the user actually spoke (server speech engines only).
+    let turnLang: Lang | undefined;
+    const current = activeLang.current ?? latest.current.lang;
+    if (shouldSwitchLanguage(heard.text, heard.lang, heard.langProbability, current)) {
+      turnLang = heard.lang;
+      activeLang.current = heard.lang!;
+      latest.current.setLang(heard.lang!);
+    }
+    await run({ type: 'heard', text: heard.text, confidence: heard.confidence }, true, heard.audio, turnLang);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detectServerStt, run]);
   listenRef.current = listenTurn;

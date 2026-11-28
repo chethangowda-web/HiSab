@@ -74,26 +74,26 @@ export default function CallEmployer({ employer }: { employer: Employer }) {
         className="input h-12 text-lg font-semibold"
       />
       {bad && (
-        <p role="alert" className="text-sm font-semibold text-[#B42318]">
+        <p role="alert" className="text-sm font-semibold text-[#FB7185]">
           {t.callBadNumber}
         </p>
       )}
       <button type="button" onClick={() => void call()} disabled={!ready || status === 'calling'} className="btn btn-ghost h-12 w-full disabled:opacity-50">
         📞 {t.callBtn} {employer.name}
       </button>
-      {!ready && <p className="text-sm text-[#6B6259]">{t.callNeedNumbers}</p>}
+      {!ready && <p className="text-sm text-[#ABA5BD]">{t.callNeedNumbers}</p>}
       {status === 'ok' && (
-        <p role="status" className="text-sm font-semibold text-[#166534]">
+        <p role="status" className="text-sm font-semibold text-[#6EE7A8]">
           {t.callCalling}
         </p>
       )}
       {status === 'error' && (
-        <p role="alert" className="text-sm font-semibold text-[#B42318]">
+        <p role="alert" className="text-sm font-semibold text-[#FB7185]">
           {t.callFailed}
         </p>
       )}
       {status === 'limit' && (
-        <p role="alert" className="text-sm font-semibold text-[#B42318]">
+        <p role="alert" className="text-sm font-semibold text-[#FB7185]">
           {t.callTooMany}
         </p>
       )}

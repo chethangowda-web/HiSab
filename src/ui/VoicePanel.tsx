@@ -6,10 +6,10 @@ import ConfirmCard from './ConfirmCard';
 import ListeningOverlay from './ListeningOverlay';
 import { whatsappUrl, type UseDialogue } from './useDialogue';
 
-function MicSvg() {
+function MicSvg({ className = 'h-6 w-6' }: { className?: string }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-16 w-16 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="2.5" width="6" height="11" rx="3" fill="currentColor" fillOpacity="0.22" />
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={`${className} fill-none stroke-current`} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="2.5" width="6" height="11" rx="3" fill="currentColor" fillOpacity="0.28" />
       <path d="M5 10.5a7 7 0 0 0 14 0" />
       <path d="M12 17.5v4" />
       <path d="M8.5 21.5h7" />
@@ -17,15 +17,51 @@ function MicSvg() {
   );
 }
 
-/** Voice actions, what was heard and said, confirmation card, Saved bar, and clean phrase list. */
+function ChipIcon({ idx }: { idx: number }) {
+  switch (idx % 4) {
+    case 0:
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="3" width="14" height="18" rx="2.5" />
+          <path d="M9 8h6M9 12h6M9 16h3" />
+        </svg>
+      );
+    case 1:
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#FF5FA2]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 2 11 13" />
+          <path d="m22 2-7 20-4-9-9-4Z" />
+        </svg>
+      );
+    case 2:
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#FF9A4D]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 14 4 9l5-5" />
+          <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+        </svg>
+      );
+    default:
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#38BDF8]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2.5 14.9 8.5 21.5 9.4 16.7 14 17.9 20.5 12 17.4 6.1 20.5 7.3 14 2.5 9.4 9.1 8.5Z" />
+        </svg>
+      );
+  }
+}
+
+const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/**
+ * Feedback stack, staggered command chips, and non-overlapping composer bar anchored cleanly above the bottom nav dock.
+ */
 export default function VoicePanel({ d }: { d: UseDialogue }) {
   const { t, lang, edgeMode } = useApp();
   const [text, setText] = useState('');
+  const [typingOpen, setTypingOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const savedRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // On a small screen the answer can sit below the fold: bring the thing the user must act on into view.
   useEffect(() => {
     if (d.phase === 'CONFIRM') cardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
   }, [d.phase]);
@@ -33,7 +69,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
     if (d.saved) savedRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
   }, [d.saved]);
 
-  const showTyping = !d.supported || d.needTyping || d.micIssue !== '';
+  const showTyping = !d.supported || d.needTyping || d.micIssue !== '' || typingOpen;
   const busy = d.listening || d.thinking;
 
   const sendValue = useCallback(
@@ -51,136 +87,174 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
     sendValue(text);
   };
 
+  const status = d.thinking ? t.thinking : d.listening ? t.listening : t.tapToSpeak;
+  const commands = COMMAND_EXAMPLES[lang];
+
   return (
-    <section className="flex flex-col gap-3.5">
+    <section className="flex flex-col gap-3">
       {(d.listening || (d.thinking && (d.engine === 'wispr' || d.engine === 'sarvam'))) && <ListeningOverlay d={d} />}
-      {!d.supported && (
-        <p role="status" className="w-full rounded-2xl border border-[#F2D08A] bg-[#FEF3C7] px-4 py-2.5 text-center text-sm font-semibold text-[#92400E]">
-          {t.typeBanner}
-        </p>
-      )}
-      {d.micIssue === 'denied' && (
-        <p role="alert" className="w-full rounded-2xl border border-[#F3B8B0] bg-[#FDECEA] px-4 py-2.5 text-center text-sm font-semibold text-[#B42318]">
-          {t.micDenied}
-        </p>
-      )}
 
-      {/* The hero: one huge microphone */}
-      <div className="flex flex-col items-center gap-3 py-2">
-        {d.supported && (
-          <button
-            type="button"
-            aria-label={t.tapToSpeak}
-            onClick={d.start}
-            disabled={busy}
-            className={`mic ${d.listening ? 'mic-listening' : d.thinking ? 'mic-thinking animate-pulse' : ''}`}
-          >
-            {d.listening && <span aria-hidden="true" className="mic-ring" />}
-            <MicSvg />
-          </button>
+      <div className="flex flex-col gap-2.5 px-3">
+        {!d.supported && (
+          <p role="status" className="card-enter w-full rounded-2xl border border-amber-300/30 bg-amber-300/10 px-4 py-2.5 text-center text-sm font-semibold text-[#FCD34D]">
+            {t.typeBanner}
+          </p>
         )}
-        <p className="text-lg font-extrabold text-[#1C1917]">{d.thinking ? t.thinking : d.listening ? t.listening : d.supported ? t.tapToSpeak : ''}</p>
-        {edgeMode && <span className="pill bg-[#F3ECDD] text-[#6B6259]">✨ Sarvam 105B</span>}
-      </div>
+        {d.micIssue === 'denied' && (
+          <p role="alert" className="card-enter w-full rounded-2xl border border-rose-300/30 bg-rose-400/10 px-4 py-2.5 text-center text-sm font-semibold text-[#FB7185]">
+            {t.micDenied}
+          </p>
+        )}
 
-      {d.heard && d.phase !== 'SAVED' && (
-        <p data-testid="heard" className="card-enter row w-full px-4 py-3 text-base text-[#1C1917]">
-          <span className="font-bold text-[#C2570C]">{t.youSaid}:</span> “{d.heard}”
-        </p>
-      )}
+        {d.heard && d.phase !== 'SAVED' && (
+          <p data-testid="heard" className="card-enter row w-full px-4 py-2.5 text-sm text-[#F5F3FA]">
+            <span className="grad-text font-bold">{t.youSaid}:</span> “{d.heard}”
+          </p>
+        )}
 
-      {d.phrase && !d.saved && (
-        <p
-          aria-live="polite"
-          className={`card-enter w-full ${
-            d.phase === 'CONFIRM' ? 'text-center text-base font-medium text-[#6B6259]' : 'card p-4 text-lg font-bold text-[#1C1917]'
-          }`}
-        >
-          <span aria-hidden="true">🔊 </span>
-          {d.phrase}
-        </p>
-      )}
-
-      {d.phase === 'CONFIRM' && (d.draft || d.action) && (
-        <div ref={cardRef} className="card-enter w-full scroll-mt-4">
-          {d.action ? <ActionCard action={d.action} onYes={d.yes} onNo={d.no} /> : <ConfirmCard draft={d.draft!} clip={d.clip} onYes={d.yes} onNo={d.no} />}
-        </div>
-      )}
-
-      {d.whatsappText && (
-        <a
-          href={whatsappUrl(d.whatsappText)}
-          target="_blank"
-          rel="noopener"
-          onClick={d.dismissWhatsApp}
-          className="card-enter btn btn-primary h-14 w-full text-base"
-        >
-          <span aria-hidden="true">📲 </span>
-          {t.openWhatsApp}
-        </a>
-      )}
-
-      {d.saved && (
-        <div
-          ref={savedRef}
-          data-testid="saved-bar"
-          role="status"
-          className="card-enter flex w-full items-center justify-between gap-3 rounded-full bg-[#E6F4EA] px-4 py-2 text-[#166534] ring-1 ring-[#BFE3C8]"
-        >
-          <span className="min-w-0 truncate text-sm font-extrabold">
-            <span aria-hidden="true">✓ </span>
-            {t.savedShort} · {d.saved.label}
-          </span>
-          <button
-            type="button"
-            onClick={() => void d.undo()}
-            className="btn h-11 shrink-0 bg-white px-4 text-sm text-[#166534] ring-1 ring-[#BFE3C8]"
+        {d.phrase && !d.saved && (
+          <p
+            aria-live="polite"
+            className={`card-enter w-full ${
+              d.phase === 'CONFIRM'
+                ? 'text-center text-sm font-medium text-[#9E97B5]'
+                : 'sheet-panel relative overflow-hidden p-3.5 text-base font-bold leading-snug text-white'
+            }`}
           >
-            {t.undo}
-          </button>
-        </div>
-      )}
+            <span aria-hidden="true">🔊 </span>
+            {d.phrase}
+          </p>
+        )}
 
-      {showTyping && (
-        <div className="card-enter flex w-full flex-col gap-2">
-          <form onSubmit={submit} className="flex w-full gap-2">
-            <input
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={t.typeHere}
-              aria-label={t.typeHere}
-              className="input min-w-0 flex-1 rounded-full placeholder:text-[#9C9183]"
-            />
-            <button type="submit" className="btn btn-primary px-5">
-              {t.send}
+        {d.phase === 'CONFIRM' && (d.draft || d.action) && (
+          <div ref={cardRef} className="card-enter w-full scroll-mt-4">
+            {d.action ? <ActionCard action={d.action} onYes={d.yes} onNo={d.no} /> : <ConfirmCard draft={d.draft!} clip={d.clip} onYes={d.yes} onNo={d.no} />}
+          </div>
+        )}
+
+        {d.whatsappText && (
+          <a href={whatsappUrl(d.whatsappText)} target="_blank" rel="noopener" onClick={d.dismissWhatsApp} className="card-enter btn btn-primary h-13 w-full text-base">
+            <span aria-hidden="true">📲 </span>
+            {t.openWhatsApp}
+          </a>
+        )}
+
+        {d.saved && (
+          <div
+            ref={savedRef}
+            data-testid="saved-bar"
+            role="status"
+            className="card-enter burst flex w-full items-center justify-between gap-3 rounded-full border border-emerald-300/35 bg-emerald-400/12 py-1.5 pl-2.5 pr-1.5 text-[#6EE7B7] shadow-[0_0_40px_-10px_rgba(110,231,183,0.65)] backdrop-blur-xl"
+          >
+            {SPARKS.map((r) => (
+              <span key={r} aria-hidden="true" className="burst-spark" style={{ ['--r' as string]: `${r}deg` }} />
+            ))}
+            <span className="flex min-w-0 items-center gap-2 text-sm font-extrabold">
+              <span aria-hidden="true" className="check-pop h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#6EE7B7] text-[#052e16]">
+                ✓
+              </span>
+              <span className="truncate">
+                {t.savedShort} · {d.saved.label}
+              </span>
+            </span>
+            <button type="button" onClick={() => void d.undo()} className="btn btn-ghost h-10 shrink-0 px-3.5 text-sm text-white">
+              {t.undo}
             </button>
-          </form>
-        </div>
-      )}
+          </div>
+        )}
 
-      {d.phase === 'IDLE' && (
-        <section className="flex flex-col gap-3 pt-1">
-          <div>
-            <h2 className="eyebrow mb-2">{t.commandsTitle}</h2>
-            <ul data-testid="command-chips" className="flex flex-wrap gap-1.5">
-              {COMMAND_EXAMPLES[lang].map((c, i) => (
-                <li key={c}>
+        {d.phase === 'IDLE' && (
+          <section className="flex flex-col gap-2 pt-1">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <h2 className="eyebrow">{t.commandsTitle}</h2>
+              {edgeMode && <span className="pill border border-white/15 bg-white/[0.06] text-[#C4B5FD]">✨ Sarvam 105B</span>}
+            </div>
+            {/* Symmetrical 2-column command grid so every pill aligns evenly inside the viewport */}
+            <ul data-testid="command-chips" className="stagger grid grid-cols-2 gap-2">
+              {commands.map((c, i) => (
+                <li key={c} className="min-w-0">
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => void d.typed(c)}
-                    className="rounded-full border border-[#EADFCB] bg-white px-3.5 py-2 text-sm font-semibold text-[#1C1917] transition hover:border-[#D3C1A0] disabled:opacity-50"
+                    className="chip w-full justify-start !px-2.5 !py-2.5 !text-[12px] disabled:opacity-50"
                   >
-                    <span aria-hidden="true">{['📄', '📲', '↩️', '⭐'][i]} </span>“{c}”
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.07]">
+                      <ChipIcon idx={i} />
+                    </span>
+                    <span className="min-w-0 truncate">“{c}”</span>
                   </button>
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
 
+      {/* Bottom composer capsule aligned identically with nav-dock directly below it */}
+      <div className="no-print sticky bottom-[5.4rem] z-20 px-3 pb-1 pt-2 bg-gradient-to-t from-[#040407] via-[#040407]/90 to-transparent">
+        <div className="dock flex items-center gap-2 p-1.5 pl-2">
+          {showTyping ? (
+            <form onSubmit={submit} className="flex min-w-0 flex-1 items-center gap-1.5">
+              {d.supported && typingOpen && (
+                <button
+                  type="button"
+                  aria-label="Hide keyboard"
+                  onClick={() => setTypingOpen(false)}
+                  className="glass-circle h-10 w-10 shrink-0 text-xs text-[#9E97B5]"
+                >
+                  ✕
+                </button>
+              )}
+              <input
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={t.typeHere}
+                aria-label={t.typeHere}
+                className="input h-11 min-w-0 flex-1 rounded-full border-transparent bg-white/[0.06] text-sm"
+              />
+              <button type="submit" className="btn btn-primary h-11 px-4 text-sm">
+                {t.send}
+              </button>
+            </form>
+          ) : (
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <button
+                type="button"
+                aria-label="Type a message"
+                onClick={() => setTypingOpen(true)}
+                className="glass-circle h-10 w-10 shrink-0 text-base font-bold text-[#ABA5BD]"
+              >
+                +
+              </button>
+              <div aria-hidden="true" onClick={busy ? undefined : d.start} className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
+                <span className="flex h-6 items-center gap-[3px]">
+                  {[0.5, 0.9, 0.6, 1, 0.7].map((b, i) => (
+                    <span
+                      key={i}
+                      className="wave-bar w-[2.5px] rounded-full bg-gradient-to-t from-[#FF2D87] to-[#FF9A4D]"
+                      style={{ height: `${b * 100}%`, animationDelay: `${-i * 0.15}s` }}
+                    />
+                  ))}
+                </span>
+                <span className="truncate text-sm font-semibold text-[#D9D5E6]">{status}</span>
+              </div>
+            </div>
+          )}
+          {d.supported && (
+            <button type="button" aria-label={t.tapToSpeak} onClick={d.start} disabled={busy} className="mic-btn">
+              {!busy && (
+                <>
+                  <span aria-hidden="true" className="mic-aura" />
+                  <span aria-hidden="true" className="mic-aura a2" />
+                </>
+              )}
+              <MicSvg className={d.thinking ? 'h-6 w-6 animate-pulse' : 'h-6 w-6'} />
+            </button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

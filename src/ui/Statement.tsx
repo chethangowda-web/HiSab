@@ -25,21 +25,21 @@ export default function Statement({ employerId, onBack }: { employerId: string; 
         <button
           type="button"
           onClick={() => void shareSummary(buildSummaryText(entries, employer, lang, workerName), t.statementTitle)}
-          className="btn btn-ghost px-5 text-[#9A3F06]"
+          className="btn btn-ghost px-5 text-[#FFB27A]"
         >
           {t.shareSummary}
         </button>
       </div>
 
-      <article data-testid="statement" className="print-area card p-5 text-[#1C1917]">
-        <h2 className="text-2xl font-extrabold text-[#C2570C]">{t.statementTitle}</h2>
+      <article data-testid="statement" className="print-area sheet-panel p-5 text-[#F5F3FA]">
+        <h2 className="text-2xl font-extrabold text-[#FF9A4D]">{t.statementTitle}</h2>
         <p className="text-xl font-bold">{employer.name}</p>
-        {workerName.trim() && <p className="text-[#6B6259]">{workerName.trim()}</p>}
-        <p className="text-sm text-[#6B6259]">{localISODate()}</p>
+        {workerName.trim() && <p className="text-[#ABA5BD]">{workerName.trim()}</p>}
+        <p className="text-sm text-[#ABA5BD]">{localISODate()}</p>
 
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
-            <tr className="border-b-2 border-[#EADFCB] text-sm text-[#6B6259]">
+            <tr className="border-b-2 border-white/10 text-sm text-[#ABA5BD]">
               <th className="py-2 pr-2">{t.colDate}</th>
               <th className="py-2 pr-2">{t.colType}</th>
               <th className="py-2 pr-2 text-right">{t.colAmount}</th>
@@ -48,28 +48,28 @@ export default function Statement({ employerId, onBack }: { employerId: string; 
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className="border-b border-[#EADFCB]">
+              <tr key={i} className="border-b border-white/10">
                 <td className="whitespace-nowrap py-2 pr-2">{r[0]}</td>
                 <td className="py-2 pr-2">{r[1]}</td>
                 <td className="py-2 pr-2 text-right font-bold tabular-nums">{r[2]}</td>
-                <td className="py-2 text-sm text-[#6B6259]">{r[3]}</td>
+                <td className="py-2 text-sm text-[#ABA5BD]">{r[3]}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 well p-3.5">
-          <dt className="text-[#6B6259]">{t.earned}</dt>
+          <dt className="text-[#ABA5BD]">{t.earned}</dt>
           <dd className="text-right font-bold tabular-nums">{inr(totals.earned)}</dd>
-          <dt className="text-[#6B6259]">{t.advances}</dt>
+          <dt className="text-[#ABA5BD]">{t.advances}</dt>
           <dd className="text-right font-bold tabular-nums">{inr(totals.advances)}</dd>
-          <dt className="text-[#6B6259]">{t.payments}</dt>
+          <dt className="text-[#ABA5BD]">{t.payments}</dt>
           <dd className="text-right font-bold tabular-nums">{inr(totals.payments)}</dd>
-          <dt className="border-t border-[#E3D6BE] pt-1.5 text-lg font-extrabold text-[#C2570C]">{t.outstanding}</dt>
-          <dd className="border-t border-[#E3D6BE] pt-1.5 text-right text-lg font-extrabold tabular-nums text-[#C2570C]">{inr(totals.outstanding)}</dd>
+          <dt className="border-t border-white/10 pt-1.5 text-lg font-extrabold text-[#FF9A4D]">{t.outstanding}</dt>
+          <dd className="border-t border-white/10 pt-1.5 text-right text-lg font-extrabold tabular-nums text-[#FF9A4D]">{inr(totals.outstanding)}</dd>
         </dl>
 
-        <p className="mt-4 text-sm text-[#6B6259]">{t.footerNote}</p>
+        <p className="mt-4 text-sm text-[#ABA5BD]">{t.footerNote}</p>
       </article>
     </div>
   );

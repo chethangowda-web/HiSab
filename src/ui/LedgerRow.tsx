@@ -48,14 +48,14 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
           {style.icon}
         </span>
         <div data-testid="row-main" className="min-w-0 flex-1">
-          <p className="break-words text-lg font-bold leading-snug text-[#1C1917]">{employerName}</p>
-          <p className="text-sm font-medium text-[#6B6259]">
+          <p className="break-words text-lg font-bold leading-snug text-[#F5F3FA]">{employerName}</p>
+          <p className="text-sm font-medium text-[#ABA5BD]">
             {typeLabel(lang, entry.type)}
             {entry.hours !== undefined ? ` · ${entry.hours} ${t.hoursUnit}` : ''}
           </p>
           <span
             className={`mt-1.5 inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${
-              entry.source === 'employer_confirmed' ? 'bg-[#E6F4EA] text-[#166534]' : 'bg-[#F3ECDD] text-[#6B6259]'
+              entry.source === 'employer_confirmed' ? 'bg-emerald-400/12 text-[#6EE7A8]' : 'bg-white/[0.06] text-[#ABA5BD]'
             }`}
           >
             {entry.source === 'employer_confirmed' ? t.employerConfirmed : t.workerRecorded}
@@ -63,7 +63,7 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
           {entry.clipId && (
             <div className="mt-2 flex items-center gap-2">
               <ClipButton clipId={entry.clipId} />
-              <span className="pill bg-[#FDEEDE] text-[#9A3F06]">
+              <span className="pill bg-[#FF7A2F]/15 text-[#FFB27A]">
                 🎙 {t.voiceProof}
               </span>
             </div>
@@ -79,7 +79,7 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
               setOpen((o) => !o);
               setMode('view');
             }}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F3ECDD] text-xl text-[#1C1917] transition hover:bg-[#EADFCB]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-xl text-[#F5F3FA] transition hover:bg-white/10"
           >
             <span aria-hidden="true">{open ? '▴' : '⋯'}</span>
           </button>
@@ -87,7 +87,7 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
       </div>
 
       {open && mode === 'view' && (
-        <div className="mt-3 flex flex-wrap gap-2 border-t border-[#EADFCB] pt-3">
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-3">
           {entry.source === 'worker' && (
             <button
               type="button"
@@ -111,7 +111,7 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
       )}
 
       {mode === 'edit' && (
-        <div className="mt-3 flex flex-col gap-3 border-t border-[#EADFCB] pt-3">
+        <div className="mt-3 flex flex-col gap-3 border-t border-white/10 pt-3">
           <label className="flex flex-col gap-1">
             <span className="eyebrow">{t.amountLabel}</span>
             <input
@@ -132,7 +132,7 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
             />
           </label>
           {error && (
-            <p role="alert" className="rounded-xl bg-[#FDECEA] px-3 py-1.5 font-semibold text-[#B42318]">
+            <p role="alert" className="rounded-xl bg-rose-400/12 px-3 py-1.5 font-semibold text-[#FB7185]">
               {error}
             </p>
           )}
@@ -148,8 +148,8 @@ export default function LedgerRow({ entry, employerName }: { entry: Entry; emplo
       )}
 
       {mode === 'delete' && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#EADFCB] pt-3">
-          <span className="text-lg font-bold text-[#1C1917]">{t.deleteAsk}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+          <span className="text-lg font-bold text-[#F5F3FA]">{t.deleteAsk}</span>
           <button type="button" onClick={() => void deleteEntry(entry.id).then(reload)} className={`${btn} btn-danger`}>
             {t.yes}
           </button>

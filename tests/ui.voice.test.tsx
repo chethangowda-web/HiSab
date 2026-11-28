@@ -5,7 +5,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 const h = vi.hoisted(() => ({
   canRecord: true,
   wispr: true,
-  transcripts: [] as (string | null)[],
+  transcripts: [] as (string | { text: string; lang?: string; langProbability?: number } | null)[],
   takes: 0,
   session: null as null | { stop(): void; cancel(): void },
   cancelled: false,
@@ -37,7 +37,8 @@ vi.mock('../src/voice/engine', () => ({
   wisprConfigured: async () => h.wispr,
   transcribeRecording: async () => {
     h.transcribeCalls++;
-    return h.transcripts.length ? h.transcripts.shift()! : null;
+    const next = h.transcripts.length ? h.transcripts.shift()! : null;
+    return next === null ? null : typeof next === 'string' ? { text: next } : next;
   },
 }));
 

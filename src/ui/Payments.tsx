@@ -16,14 +16,15 @@ export default function Payments() {
   const today = localISODate();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="card p-5">
-        <p className="eyebrow">{t.total}</p>
-        <p data-testid="payments-total" className="mt-1 text-5xl font-extrabold tracking-tight tabular-nums text-[#1C1917]">
+    <div className="stagger flex flex-col gap-4">
+      <div className="card relative overflow-hidden p-5">
+        <span aria-hidden="true" className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#38BDF8]/15 blur-3xl" />
+        <p className="eyebrow relative">{t.total}</p>
+        <p data-testid="payments-total" className="money-text relative mt-1 text-5xl font-extrabold tracking-tight tabular-nums">
           {inr(total)}
         </p>
       </div>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="stagger flex flex-col gap-2.5">
         {rows.map((e) => {
           const style = TYPE_STYLE[e.type];
           return (
@@ -32,8 +33,8 @@ export default function Payments() {
                 {style.icon}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-lg font-bold text-[#1C1917]">{name(e.employerId)}</span>
-                <span className="block text-sm font-medium text-[#6B6259]">
+                <span className="block truncate text-lg font-bold text-[#F5F3FA]">{name(e.employerId)}</span>
+                <span className="block text-sm font-medium text-[#ABA5BD]">
                   {typeLabel(lang, e.type)} · {friendlyDate(lang, e.date, today)}
                 </span>
               </span>
