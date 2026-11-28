@@ -1,10 +1,23 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import type { Lang } from '../domain/types';
 import { COMMAND_EXAMPLES } from '../i18n/examples';
 import ActionCard from './ActionCard';
 import { useApp } from './AppContext';
 import ConfirmCard from './ConfirmCard';
 import ListeningOverlay from './ListeningOverlay';
 import { whatsappUrl, type UseDialogue } from './useDialogue';
+
+const STARTER_LOGS: Record<Lang, [string, string]> = {
+  'en-IN': ['Worked for Ramesh today 700', 'Ramesh gave me 500 advance'],
+  'hi-IN': ['आज रमेश के साइट पर 700 रुपये काम किया', 'रमेश ने 500 रुपये एडवांस दिए'],
+  'kn-IN': ['ರಮೇಶ್ ಅವರ ಸೈಟ್‌ನಲ್ಲಿ 700 ರೂಪಾಯಿ ಕೆಲಸ ಮಾಡಿದೆ', 'ರಮೇಶ್ 500 ರೂಪಾಯಿ ಮುಂಗಡ ಕೊಟ್ಟರು'],
+};
+
+const STARTER_TITLE: Record<Lang, string> = {
+  'en-IN': 'Try logging a workday',
+  'hi-IN': 'पहले एक काम बोलकर देखें',
+  'kn-IN': 'ಮೊದಲ ದಾಖಲೆ ಪ್ರಯತ್ನಿಸಿ',
+};
 
 function MicSvg({ className = 'h-6 w-6' }: { className?: string }) {
   return (
@@ -55,12 +68,24 @@ const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315];
  * Feedback stack, staggered command chips, and non-overlapping composer bar anchored cleanly above the bottom nav dock.
  */
 export default function VoicePanel({ d }: { d: UseDialogue }) {
-  const { t, lang, edgeMode } = useApp();
+  const { t, lang, edgeMode, entries } = useApp();
   const [text, setText] = useState('');
   const [typingOpen, setTypingOpen] = useState(false);
+  const [online, setOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const cardRef = useRef<HTMLDivElement>(null);
   const savedRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
+    return () => {
+      window.removeEventListener('online', up);
+      window.removeEventListener('offline', down);
+    };
+  }, []);
 
   useEffect(() => {
     if (d.phase === 'CONFIRM') cardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
@@ -164,10 +189,46 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
         )}
 
         {d.phase === 'IDLE' && (
-          <section className="flex flex-col gap-2 pt-1">
+          <section className="flex flex-col gap-2.5 pt-1">
+            {entries.length === 0 && (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="eyebrow">{STARTER_TITLE[lang]}</span>
+                  <span className="pill border border-white/10 bg-white/[0.04] text-[11px] text-[#9E97B5]">
+                    <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-[#6EE7B7]' : 'bg-[#FCD34D]'}`} />
+                    {online ? 'Cloud AI' : 'Offline ready'}
+                  </span>
+                </div>
+                <ul data-testid="starter-chips" className="stagger grid grid-cols-2 gap-2">
+                  {STARTER_LOGS[lang].map((s, i) => (
+                    <li key={s} className="min-w-0">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void d.typed(s)}
+                        className="chip w-full justify-start border-[#FF2D87]/25 !px-2.5 !py-2.5 !text-[12px] disabled:opacity-50"
+                      >
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF8A3D]/30 to-[#FF2D87]/30 text-[11px]">
+                          {i === 0 ? '⚡' : '₹'}
+                        </span>
+                        <span className="min-w-0 truncate">“{s}”</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2 px-1">
               <h2 className="eyebrow">{t.commandsTitle}</h2>
-              {edgeMode && <span className="pill border border-white/15 bg-white/[0.06] text-[#C4B5FD]">✨ Sarvam 105B</span>}
+              <div className="flex items-center gap-1.5">
+                {entries.length > 0 && (
+                  <span className="pill border border-white/10 bg-white/[0.04] text-[11px] text-[#9E97B5]">
+                    <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-[#6EE7B7]' : 'bg-[#FCD34D]'}`} />
+                    {online ? 'Sarvam AI' : 'Offline'}
+                  </span>
+                )}
+                {edgeMode && <span className="pill border border-white/15 bg-white/[0.06] text-[#C4B5FD]">✨ 105B</span>}
+              </div>
             </div>
             {/* Symmetrical 2-column command grid so every pill aligns evenly inside the viewport */}
             <ul data-testid="command-chips" className="stagger grid grid-cols-2 gap-2">

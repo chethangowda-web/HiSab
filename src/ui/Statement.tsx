@@ -1,17 +1,44 @@
+import { useState } from 'react';
 import { localISODate } from '../domain/dates';
+import { buildReceiptPayload, encodeReceipt } from '../domain/receipt';
 import { buildStatementRows, buildSummaryText, shareSummary } from '../domain/statement';
 import { inr } from '../i18n/ui';
 import { useApp } from './AppContext';
+import { whatsappUrl } from './useDialogue';
 
 /**
- * A printable wage statement. "Save as PDF" uses the browser's print dialog, because the browser
+ * A printable wage statement plus two-party shareable Trust Receipt link.
+ * "Save as PDF" uses the browser's print dialog, because the browser
  * shapes Kannada and Hindi text correctly (a hand-built PDF library does not).
  */
 export default function Statement({ employerId, onBack }: { employerId: string; onBack: () => void }) {
   const { t, lang, entries, employers, workerName } = useApp();
+  const [copied, setCopied] = useState(false);
   const employer = employers.find((e) => e.id === employerId);
   if (!employer) return null;
   const { rows, totals } = buildStatementRows(entries, employer, lang);
+  const receipt = buildReceiptPayload(entries, employer, lang, workerName);
+  const verifyLink = (() => {
+    try {
+      return `${window.location.origin}/?verify=${encodeReceipt(receipt)}`;
+    } catch {
+      return `/?verify=${encodeReceipt(receipt)}`;
+    }
+  })();
+
+  const copyVerify = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${employer.name} · ${t.statementTitle}`, text: `BoliHisab receipt (${inr(totals.outstanding)} owed)`, url: verifyLink });
+        return;
+      }
+      await navigator.clipboard?.writeText(verifyLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // user dismissed share sheet
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,6 +98,31 @@ export default function Statement({ employerId, onBack }: { employerId: string; 
 
         <p className="mt-4 text-sm text-[#ABA5BD]">{t.footerNote}</p>
       </article>
+
+      <section data-testid="trust-receipt-bar" className="no-print card flex flex-col gap-3 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="eyebrow">Two-party verification</span>
+          <span className="pill border border-white/10 bg-white/[0.05] text-[#D9D5E6]">
+            {receipt.vp > 0 ? `🎙 ${receipt.vp}/${receipt.n} voice proofs` : `📒 ${receipt.n} entries`}
+          </span>
+        </div>
+        <p className="text-xs leading-relaxed text-[#9E97B5]">
+          Send a tamper-checked wage receipt link so {employer.name} can review totals and confirm via WhatsApp.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => void copyVerify()} className="btn btn-ghost flex-1 text-sm">
+            {copied ? '✓ Link copied' : '🔗 Share verify link'}
+          </button>
+          <a
+            href={whatsappUrl(`Please verify our BoliHisab wage summary (${inr(totals.outstanding)} owed): ${verifyLink}`)}
+            target="_blank"
+            rel="noopener"
+            className="btn btn-primary flex-1 text-sm"
+          >
+            📲 WhatsApp sign-off
+          </a>
+        </div>
+      </section>
     </div>
   );
 }

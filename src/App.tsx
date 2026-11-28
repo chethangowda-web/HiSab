@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Lang } from './domain/types';
 import { LANGUAGES } from './i18n/ui';
 import { AppProvider, useApp, type Tab } from './ui/AppContext';
@@ -7,6 +8,7 @@ import Ledger from './ui/Ledger';
 import Payments from './ui/Payments';
 import Settings from './ui/Settings';
 import Statement from './ui/Statement';
+import VerifyView from './ui/VerifyView';
 
 const SHORT: Record<Lang, string> = { 'kn-IN': 'ಕ', 'hi-IN': 'हि', 'en-IN': 'EN' };
 
@@ -186,6 +188,32 @@ function Shell() {
 }
 
 export default function App() {
+  const [verifyToken, setVerifyToken] = useState<string | null>(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('verify');
+    } catch {
+      return null;
+    }
+  });
+
+  if (verifyToken) {
+    return (
+      <VerifyView
+        token={verifyToken}
+        onDismiss={() => {
+          setVerifyToken(null);
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('verify');
+            window.history.replaceState({}, '', url.pathname + url.search);
+          } catch {
+            // ignore history errors in non-browser contexts
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <AppProvider>
       <Shell />

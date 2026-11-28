@@ -4,6 +4,7 @@ import { friendlyDate } from '../i18n/messages';
 import { useApp } from './AppContext';
 import EmptyState from './EmptyState';
 import LedgerRow from './LedgerRow';
+import WeekStrip from './WeekStrip';
 
 /** Newest first: by date, then by when it was recorded. */
 export const newestFirst = (a: Entry, b: Entry) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt;
@@ -25,6 +26,7 @@ export default function Ledger() {
 
   return (
     <div className="stagger flex flex-col gap-5">
+      <WeekStrip entries={entries} lang={lang} today={today} />
       {groups.map((g) => (
         <section key={g.date}>
           <h3 className="eyebrow mb-2.5 px-1">{friendlyDate(lang, g.date, today)}</h3>

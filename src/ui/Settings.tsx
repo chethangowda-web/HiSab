@@ -1,8 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { edgeInfo } from '../nlu/llmParser';
+import { buildExportBackup } from '../domain/receipt';
+import { localISODate } from '../domain/dates';
 import { wisprConfigured } from '../voice/engine';
 import { LANGUAGES } from '../i18n/ui';
 import { db } from '../db/db';
+import { seedSampleLedger } from '../db/seed';
 import { useApp } from './AppContext';
 import Avatar from './Avatar';
 import WisprMark from './WisprMark';
@@ -58,12 +61,19 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
 }
 
 export default function Settings() {
-  const { t, lang, setLang, workerName, setWorkerName, workerPhone, setWorkerPhone, edgeMode, setEdgeMode, employers, keepProof, setKeepProof, useWispr, setUseWispr } =
+  const { t, lang, setLang, workerName, setWorkerName, workerPhone, setWorkerPhone, edgeMode, setEdgeMode, employers, entries, reload, keepProof, setKeepProof, useWispr, setUseWispr } =
     useApp();
   const [wispr, setWispr] = useState<'checking' | 'ok' | 'missing'>('checking');
+  const [sarvamVoice, setSarvamVoice] = useState<'checking' | 'ok' | 'missing'>('checking');
+  const [sampleLoaded, setSampleLoaded] = useState(false);
+
   useEffect(() => {
     let alive = true;
     void wisprConfigured().then((ok) => alive && setWispr(ok ? 'ok' : 'missing'));
+    void fetch('/api/voice-health')
+      .then((r) => (r.ok ? (r.json() as Promise<{ sarvamStt?: boolean }>) : null))
+      .then((d) => alive && setSarvamVoice(d?.sarvamStt ? 'ok' : 'missing'))
+      .catch(() => alive && setSarvamVoice('missing'));
     return () => {
       alive = false;
     };
@@ -131,6 +141,19 @@ export default function Settings() {
       </Card>
 
       <Card title={t.voiceEngineTitle}>
+        <div className="well flex items-center justify-between gap-3 p-3">
+          <div>
+            <p className="text-sm font-extrabold text-white">✨ Sarvam AI Voice (STT + TTS)</p>
+            <p className={sarvamVoice === 'ok' ? 'text-xs font-semibold text-[#6EE7A8]' : 'text-xs text-[#9E97B5]'}>
+              {sarvamVoice === 'checking'
+                ? t.edgeChecking
+                : sarvamVoice === 'ok'
+                  ? 'Active · saaras:v4 Indian speech + neural voice replies'
+                  : 'Phone speech recognition active'}
+            </p>
+          </div>
+          {sarvamVoice === 'ok' && <span className="pill border border-emerald-400/35 bg-emerald-400/15 text-[#6EE7A8]">Active</span>}
+        </div>
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="flex items-center gap-2 text-lg font-bold text-[#F5F3FA]">
@@ -181,6 +204,40 @@ export default function Settings() {
             {edge === 'checking' ? t.edgeChecking : edge === 'sarvam' ? t.edgeSarvamOk : edge === 'ok' ? t.edgeOk : t.edgeDown}
           </p>
         )}
+      </Card>
+
+      <Card title="Khata backup & sample week">
+        <p className="text-sm text-[#ABA5BD]">Download a backup of your entries anytime, or populate a sample week to test all reports.</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const json = buildExportBackup(entries, employers, workerName);
+              const blob = new Blob([json], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `bolihisab-${localISODate()}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="btn btn-ghost flex-1 text-sm"
+          >
+            ⬇ Export JSON ({entries.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void seedSampleLedger().then(async () => {
+                await reload();
+                setSampleLoaded(true);
+              });
+            }}
+            className="btn btn-primary flex-1 text-sm"
+          >
+            {sampleLoaded ? '✓ Sample loaded' : '▶ Load sample week'}
+          </button>
+        </div>
       </Card>
     </div>
   );

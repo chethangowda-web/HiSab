@@ -6,6 +6,7 @@ import Avatar from './Avatar';
 import Orb, { type OrbMood } from './Orb';
 import { useDialogue, type UseDialogue } from './useDialogue';
 import VoicePanel from './VoicePanel';
+import WeekStrip from './WeekStrip';
 
 function moodOf(d: UseDialogue): OrbMood {
   if (d.listening) return 'listening';
@@ -41,9 +42,9 @@ function Greeting({ d, compact, empty }: { d: UseDialogue; compact: boolean; emp
   );
 }
 
-/** The balance owed: specular obsidian glass card, luminous money total and per-employer chips. */
+/** The balance owed: specular obsidian glass card, 7-day strip, luminous money total and clickable per-employer chips. */
 function Balance({ compact }: { compact: boolean }) {
-  const { t, entries, employers } = useApp();
+  const { t, lang, entries, employers, openStatement } = useApp();
   const owed = employers.reduce((sum, e) => sum + balance(entries, e.id), 0);
   const month = earned(entries, { month: localISODate().slice(0, 7) });
   const rows = employers
@@ -82,15 +83,21 @@ function Balance({ compact }: { compact: boolean }) {
         </div>
       </div>
 
+      <div className="relative mt-3">
+        <WeekStrip entries={entries} lang={lang} compact />
+      </div>
+
       {rows.length > 0 && (
         <div className="relative mt-3 border-t border-white/[0.07] pt-3">
           <h3 className="eyebrow mb-2">{t.byEmployer}</h3>
           <ul data-testid="owed-by-employer" className="stagger flex flex-wrap gap-2">
             {rows.map(({ e, bal }) => (
-              <li key={e.id} className="chip py-1 pl-1 pr-3">
-                <Avatar name={e.name} size="h-7 w-7 text-xs" />
-                <span className="min-w-0 break-words text-xs font-semibold text-white">{e.name}</span>
-                <span className="money-text text-xs font-extrabold tabular-nums">{inr(bal)}</span>
+              <li key={e.id} className="shrink-0">
+                <button type="button" onClick={() => openStatement(e.id)} className="chip py-1 pl-1 pr-3">
+                  <Avatar name={e.name} size="h-7 w-7 text-xs" />
+                  <span className="min-w-0 break-words text-xs font-semibold text-white">{e.name}</span>
+                  <span className="money-text text-xs font-extrabold tabular-nums">{inr(bal)}</span>
+                </button>
               </li>
             ))}
           </ul>
