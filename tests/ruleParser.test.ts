@@ -94,6 +94,9 @@ describe('parseUtterance details', () => {
   it('"yes sir" is still just a confirmation', () => {
     expect(parseUtterance('yes sir', ctx).kind).toBe('confirm');
   });
+  it('"yes please save it" is recognized as confirm', () => {
+    expect(parseUtterance('yes please save it', ctx).kind).toBe('confirm');
+  });
   it('an advance with no employer asks for one', () => {
     const r = parseUtterance('The contractor gave me 1000 rupees advance', ctx);
     expect(r.kind).toBe('record');

@@ -56,21 +56,21 @@ describe('low confidence', () => {
   });
 });
 
-describe('clarify then confirm', () => {
-  it('asks for a missing employer, then reads back', () => {
+describe('clarify then save', () => {
+  it('asks for a missing employer, then saves directly', () => {
     const { all } = run([heard('The contractor gave me 1000 rupees advance'), heard('Ramesh')]);
     expect(all[0].state.phase).toBe('CLARIFY');
     expect(all[0].state.asking).toBe('employer');
     expect(all[0].speak).toBe(m.clarify('employer'));
-    expect(all[1].state.phase).toBe('CONFIRM');
-    expect(all[1].speak).toContain('Ramesh');
-    expect(all[1].speak).toContain('1000');
+    expect(all[1].state.phase).toBe('SAVED');
+    expect(all[1].save?.employerId).toBe('r1');
+    expect(all[1].save?.amount).toBe(1000);
   });
   it('asks for a missing amount and accepts it spoken as words', () => {
     const { all } = run([heard('I worked at Ramesh today'), heard('seven hundred')]);
     expect(all[0].state.asking).toBe('amount');
-    expect(all[1].state.phase).toBe('CONFIRM');
-    expect(all[1].speak).toContain('700');
+    expect(all[1].state.phase).toBe('SAVED');
+    expect(all[1].save?.amount).toBe(700);
   });
   it('re-asks when the amount answer is not a number', () => {
     const { all } = run([heard('I worked at Ramesh today'), heard('hello')]);
@@ -97,35 +97,35 @@ describe('employers', () => {
     { id: 'a', name: 'Ramesh Kumar' },
     { id: 'b', name: 'Ramesh Gowda' },
   ];
-  it('asks which one when two employers share a name, and uses the chosen one', () => {
+  it('asks which one when two employers share a name, and saves the chosen one', () => {
     const ctx = makeCtx({ employers: twoRameshes });
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('Ramesh Gowda'), { type: 'tap_yes' }], ctx);
+    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('Ramesh Gowda')], ctx);
     expect(all[0].state.phase).toBe('CLARIFY');
     expect(all[0].speak).toContain('Ramesh Kumar');
     expect(all[0].speak).toContain('Ramesh Gowda');
-    expect(all[1].state.phase).toBe('CONFIRM');
-    expect(all[2].save?.employerId).toBe('b');
+    expect(all[1].state.phase).toBe('SAVED');
+    expect(all[1].save?.employerId).toBe('b');
   });
   it('accepts just the surname to disambiguate', () => {
     const ctx = makeCtx({ employers: twoRameshes });
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('Kumar'), { type: 'tap_yes' }], ctx);
-    expect(all[2].save?.employerId).toBe('a');
+    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('Kumar')], ctx);
+    expect(all[1].save?.employerId).toBe('a');
   });
   it('creates a new employer for an unknown name', () => {
-    const { last } = run([heard('Mahesh ne 500 rupaye diye'), { type: 'tap_yes' }]);
+    const { last } = run([heard('Mahesh ne 500 rupaye diye')]);
     expect(last.newEmployer?.name).toBe('Mahesh');
     expect(last.save?.employerId).toBe(last.newEmployer?.id);
   });
   it('reuses an existing employer instead of creating one', () => {
-    const { last } = run([heard('Ramesh ne 500 rupaye diye'), { type: 'tap_yes' }]);
+    const { last } = run([heard('Ramesh ne 500 rupaye diye')]);
     expect(last.newEmployer).toBeUndefined();
     expect(last.save?.employerId).toBe('r1');
   });
 });
 
 describe('saving', () => {
-  it('tap_yes in CONFIRM saves a worker-recorded entry', () => {
-    const { last } = run([heard('The contractor gave me 1000 rupees advance'), heard('Ramesh'), { type: 'tap_yes' }]);
+  it('saves directly once all fields are clear', () => {
+    const { last } = run([heard('The contractor gave me 1000 rupees advance'), heard('Ramesh')]);
     expect(last.state.phase).toBe('SAVED');
     expect(last.speak).toBe(m.saved);
     expect(last.save).toMatchObject<Partial<Entry>>({
@@ -139,55 +139,38 @@ describe('saving', () => {
     });
     expect(last.save?.rawTranscript).toContain('1000 rupees advance');
   });
-  it('spoken yes also saves', () => {
-    const { last } = run([heard('Ramesh ne 500 rupaye diye'), heard('haan')]);
+  it('saves a complete sentence in a single turn without asking yes/no', () => {
+    const { last } = run([heard('Ramesh ne 500 rupaye diye')]);
+    expect(last.state.phase).toBe('SAVED');
     expect(last.save?.amount).toBe(500);
   });
-  it('a spoken correction re-reads back the new amount, and saves only that', () => {
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('nahi, 800'), heard('yes')]);
-    expect(all[1].state.phase).toBe('CONFIRM');
-    expect(all[1].speak).toContain('800');
-    expect(all[1].save).toBeUndefined();
-    expect(all[2].save?.amount).toBe(800);
-  });
-  it('a plain no discards the draft', () => {
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('no')]);
-    expect(all[1].state.phase).toBe('IDLE');
-    expect(all[1].speak).toBe(m.discarded);
-    expect(all[1].save).toBeUndefined();
-  });
-  it('tap_no discards the draft', () => {
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), { type: 'tap_no' }]);
-    expect(all[1].state.phase).toBe('IDLE');
-    expect(all[1].save).toBeUndefined();
-  });
-  it('an unrelated sentence while confirming re-reads the entry instead of saving', () => {
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('hello there')]);
-    expect(all[1].state.phase).toBe('CONFIRM');
-    expect(all[1].save).toBeUndefined();
-  });
-  it('a new full sentence while confirming replaces the draft', () => {
-    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('Ramesh ne 900 rupaye diye'), heard('yes')]);
-    expect(all[2].save?.amount).toBe(900);
-  });
   it('can record again right after a save', () => {
-    const { last } = run([heard('Ramesh ne 500 rupaye diye'), heard('yes'), heard('Ramesh ne 300 rupaye diye'), heard('yes')]);
-    expect(last.save?.amount).toBe(300);
+    const { all } = run([heard('Ramesh ne 500 rupaye diye'), heard('Ramesh ne 300 rupaye diye')]);
+    expect(all[0].save?.amount).toBe(500);
+    expect(all[1].save?.amount).toBe(300);
+  });
+  it('multi-word confirmation like "yes please save it" is accepted in CONFIRM phase', () => {
+    const confirmState: DialogueState = {
+      phase: 'CONFIRM',
+      draft: { type: 'payment', employerId: 'r1', employerName: 'Ramesh', amount: 500, date: today, rawTranscript: 'Ramesh ne 500 rupaye diye' },
+      retries: 0,
+    };
+    const r = step(confirmState, heard('yes please save it'), makeCtx());
+    expect(r.state.phase).toBe('SAVED');
+    expect(r.save?.amount).toBe(500);
   });
 });
 
-describe('never saves without an explicit confirm', () => {
+describe('never saves ambiguous or missing-field sentences', () => {
   const sequences: DialogueEvent[][] = [
-    [heard('Ramesh ne 500 rupaye diye')],
-    [heard('Ramesh ne 500 rupaye diye'), heard('no')],
-    [heard('Ramesh ne 500 rupaye diye'), { type: 'tap_no' }],
-    [heard('Ramesh ne 500 rupaye diye'), heard('hello there'), heard('Ramesh ne 500 rupaye diye', 0.1)],
+    [heard('Ramesh ne 500 rupaye diye', 0.1)],
     [{ type: 'tap_yes' }],
     [heard('yes')],
     [heard('I worked at Ramesh today'), { type: 'tap_yes' }],
-    [heard('I worked at Ramesh today'), heard('700')],
+    [heard('I worked at Ramesh today'), heard('hello')],
     [heard('The contractor gave me 1000 rupees advance'), { type: 'tap_yes' }, heard('yes')],
     [heard('I worked at Ramesh for 700 and Suresh paid 200'), heard('yes')],
+    [heard('hello there')],
   ];
   it.each(sequences.map((s, i) => [i, s] as const))('sequence %i produces no save', (_i, events) => {
     const { all } = run([...events]);

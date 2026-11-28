@@ -136,7 +136,7 @@ function proceed(draft: Draft, ctx: DialogueCtx, prefix = ''): StepResult {
       speak: prefix + (perDayQuestion ? cm.askPerDay : m.clarify(missing[0])),
     };
   }
-  return { state: { phase: 'CONFIRM', draft: d, retries: 0 }, speak: prefix + m.readBack(d, ctx.today) };
+  return commit({ phase: 'CONFIRM', draft: d, retries: 0 }, ctx);
 }
 
 function handleCommand(intent: Extract<Intent, { kind: 'command' }>, ctx: DialogueCtx): StepResult {
@@ -146,9 +146,7 @@ function handleCommand(intent: Extract<Intent, { kind: 'command' }>, ctx: Dialog
   if (intent.cmd === 'undo') {
     const last = [...ctx.entries].sort((a, b) => b.createdAt - a.createdAt)[0];
     if (!last) return { state: initialState, speak: cm.nothingToUndo };
-    const name = ctx.employers.find((e) => e.id === last.employerId)?.name ?? '';
-    const question = cm.confirmDelete(entryLabel(ctx.lang, last, name, ctx.today));
-    return { state: { phase: 'CONFIRM', retries: 0, action: { kind: 'delete', entryId: last.id, question } }, speak: question };
+    return { state: initialState, speak: cm.deleted, deleteEntryId: last.id };
   }
 
   if (!intent.employerName) return { state: initialState, speak: cm.sayName };
@@ -164,20 +162,19 @@ function handleCommand(intent: Extract<Intent, { kind: 'command' }>, ctx: Dialog
       const owed = balance(ctx.entries, emp.id);
       if (owed <= 0) return { state: initialState, speak: cm.nothingToRemind(emp.name) };
       const text = cm.reminderText(emp.name, owed, ctx.workerName);
-      const question = cm.confirmRemind(emp.name, owed);
       return {
-        state: { phase: 'CONFIRM', retries: 0, action: { kind: 'remind', employerId: emp.id, text, question } },
-        speak: question,
-        reminder: { employerId: emp.id, text },
+        state: initialState,
+        speak: cm.openingWhatsApp,
+        openWhatsApp: text,
       };
     }
     case 'set_rate': {
       const rate = intent.amount;
       if (rate === undefined || !Number.isInteger(rate) || rate <= 0 || rate >= AMOUNT_MAX) return { state: initialState, speak: cm.badRate };
-      const question = cm.confirmRate(emp.name, rate);
       return {
-        state: { phase: 'CONFIRM', retries: 0, action: { kind: 'rate', employerId: emp.id, name: emp.name, rate, question } },
-        speak: question,
+        state: initialState,
+        speak: cm.rateSaved(emp.name, rate),
+        updateEmployer: { id: emp.id, dailyRate: rate },
       };
     }
   }

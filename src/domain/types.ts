@@ -14,8 +14,6 @@ export interface Entry {
   rawTranscript: string;
   lang: Lang;
   createdAt: number;
-  /** True for sample data created by demo mode. Never mixed with real records. */
-  demo?: boolean;
   /** The worker's recording of this entry ("voice proof"), if one was kept. */
   clipId?: string;
 }
@@ -25,8 +23,6 @@ export interface Employer {
   name: string;
   dailyRate?: number;
   overtimeRate?: number;
-  /** True for sample data created by demo mode. */
-  demo?: boolean;
 }
 
 export type Draft = Partial<Entry> & {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import App from '../src/App';
 import { db, listEntries, addEntry } from '../src/db/db';
-import { seedDemoData } from '../src/db/seed';
+import { seedSampleLedger } from '../src/db/seed';
 import { localISODate } from '../src/domain/dates';
 import type { Entry } from '../src/domain/types';
 import { EXAMPLES } from '../src/i18n/examples';
@@ -37,40 +37,31 @@ const entry = (p: Partial<Entry>): Entry => ({
   ...p,
 });
 
-describe('confirming an entry', () => {
-  it('shows what was understood as a card with the amount, employer, type and date', async () => {
+describe('direct voice-to-save', () => {
+  it('saves immediately and shows what was saved in the Saved bar', async () => {
     render(<App />);
     await type('Ramesh ne 500 rupaye diye');
-    const card = await screen.findByTestId('confirm-card');
-    expect(card).toHaveTextContent('Ramesh');
-    expect(card).toHaveTextContent('₹500');
-    expect(card).toHaveTextContent(/payment/i);
-    expect(card).toHaveTextContent(/today/i);
-    expect(within(card).getByRole('button', { name: /^yes$/i })).toBeInTheDocument();
-    expect(within(card).getByRole('button', { name: /^no$/i })).toBeInTheDocument();
+    const bar = await screen.findByTestId('saved-bar');
+    expect(bar).toHaveTextContent('Ramesh');
+    expect(bar).toHaveTextContent('₹500');
+    await waitFor(async () => expect(await listEntries()).toHaveLength(1));
   });
 
-  it('shows hours on an overtime card', async () => {
+  it('saves hours on an overtime entry', async () => {
     render(<App />);
     await type('I worked two extra hours at Ramesh');
     await screen.findByText(/How many rupees/i);
     await type('150');
-    expect(await screen.findByTestId('confirm-card')).toHaveTextContent(/2 ?(h|hours)/i);
+    await waitFor(async () => expect(await listEntries()).toHaveLength(1));
+    expect((await listEntries())[0]).toMatchObject({ type: 'overtime', hours: 2, amount: 150 });
   });
 
-  it('shows what the app heard, so the worker can spot a mistake', async () => {
+  it('shows what the app heard for a query, so the worker can spot a mistake', async () => {
     render(<App />);
-    await type('Ramesh ne 500 rupaye diye');
+    await type('How much does Ramesh owe me?');
     const heard = await screen.findByTestId('heard');
-    expect(heard).toHaveTextContent('Ramesh ne 500 rupaye diye');
+    expect(heard).toHaveTextContent('How much does Ramesh owe me?');
     expect(heard).toHaveTextContent(/you said/i);
-  });
-
-  it('removes the confirm card once answered', async () => {
-    render(<App />);
-    await type('Ramesh ne 500 rupaye diye');
-    fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^no$/i }));
-    await waitFor(() => expect(screen.queryByTestId('confirm-card')).toBeNull());
   });
 });
 
@@ -78,7 +69,6 @@ describe('undo after saving', () => {
   it('shows a Saved bar with Undo, and Undo removes the entry', async () => {
     render(<App />);
     await type('Ramesh ne 500 rupaye diye');
-    fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^yes$/i }));
     const bar = await screen.findByTestId('saved-bar');
     expect(bar).toHaveTextContent(/saved/i);
     expect(bar).toHaveTextContent('Ramesh');
@@ -89,14 +79,12 @@ describe('undo after saving', () => {
     await waitFor(() => expect(screen.queryByTestId('saved-bar')).toBeNull());
   });
 
-  it('the Saved bar goes away when the next entry starts', async () => {
+  it('the Saved bar updates when the next entry is saved', async () => {
     render(<App />);
     await type('Ramesh ne 500 rupaye diye');
-    fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^yes$/i }));
     await screen.findByTestId('saved-bar');
     await type('Ramesh ne 300 rupaye diye');
-    await screen.findByTestId('confirm-card');
-    expect(screen.queryByTestId('saved-bar')).toBeNull();
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('₹300');
   });
 });
 
@@ -130,12 +118,10 @@ describe('language', () => {
 });
 
 describe('home screen', () => {
-  it('shows a welcome with a one-tap demo when there is no data', async () => {
+  it('shows a welcome with no demo button when there is no data', async () => {
     render(<App />);
     expect(await screen.findByText(/welcome/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /try the demo/i }));
-    expect(await screen.findByText('DEMO MODE')).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByText(/welcome/i)).toBeNull());
+    expect(screen.queryByRole('button', { name: /demo/i })).toBeNull();
   });
 
   it('shows example sentences in the current language', async () => {
@@ -146,7 +132,7 @@ describe('home screen', () => {
   });
 
   it('breaks the balance down by employer', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     const list = await screen.findByTestId('owed-by-employer');
     expect(within(list).getByText('Ramesh')).toBeInTheDocument();
@@ -240,44 +226,29 @@ describe('navigation', () => {
   });
 });
 
-describe('the confirm flow stays within reach', () => {
-  it('shrinks the balance card to a compact bar while an entry is being confirmed', async () => {
-    await seedDemoData({ demo: false });
+describe('the clarify flow stays within reach', () => {
+  it('shrinks the balance card to a compact bar while clarifying a missing field', async () => {
+    await seedSampleLedger();
     render(<App />);
     expect(await screen.findByTestId('owed-by-employer')).toBeInTheDocument();
-    await type('Ramesh ne 500 rupaye diye');
-    await screen.findByTestId('confirm-card');
+    await type('I worked at Suresh today');
+    await screen.findByText(/How many rupees/i);
     expect(screen.queryByTestId('owed-by-employer')).toBeNull();
     expect(screen.getByTestId('owed-total')).toBeInTheDocument(); // the amount stays visible
-    fireEvent.click(within(screen.getByTestId('confirm-card')).getByRole('button', { name: /^no$/i }));
+    await type('700');
     expect(await screen.findByTestId('owed-by-employer')).toBeInTheDocument();
-  });
-
-  it('scrolls the confirm card into view when it appears', async () => {
-    const scroll = vi.fn();
-    Element.prototype.scrollIntoView = scroll;
-    try {
-      render(<App />);
-      await type('Ramesh ne 500 rupaye diye');
-      await screen.findByTestId('confirm-card');
-      await waitFor(() => expect(scroll).toHaveBeenCalled());
-    } finally {
-      // @ts-expect-error jsdom has no scrollIntoView by default
-      delete Element.prototype.scrollIntoView;
-    }
   });
 
   it('after saving, shows only the Saved bar, not "yes" and "Saved." as well', async () => {
     render(<App />);
     await type('Ramesh ne 500 rupaye diye');
-    fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^yes$/i }));
     await screen.findByTestId('saved-bar');
     expect(screen.queryByTestId('heard')).toBeNull();
     expect(screen.queryByText(/^Saved\.$/)).toBeNull();
   });
 
   it('still shows what was heard for a question, next to its answer', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     await type('How much does Ramesh still owe me?');
     expect(await screen.findByTestId('heard')).toHaveTextContent('How much does Ramesh still owe me?');

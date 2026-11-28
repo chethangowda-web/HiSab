@@ -6,16 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "start": "tsx server/index.ts",
     "preview": "vite preview",
     "test": "vitest run",
-    "server": "tsx server/index.ts",
-    "edge": "tsx server/index.ts",
+    "server": "tsx --env-file-if-exists=.env server/index.ts",
+    "edge": "tsx --env-file-if-exists=.env server/index.ts",
     "bench": "tsx bench/run.ts"
   },
   "dependencies": {
     "dexie": "^4.4.7",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
@@ -28,7 +30,6 @@
     "fake-indexeddb": "^6.2.8",
     "jsdom": "^31.0.1",
     "tailwindcss": "^4.3.5",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.4.0",
     "vitest": "^5.1.2"

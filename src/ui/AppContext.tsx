@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Employer, Entry, Lang } from '../domain/types';
-import { clearDemoData, db, listEmployers, listEntries } from '../db/db';
-import { seedDemoData } from '../db/seed';
+import { db, listEmployers, listEntries } from '../db/db';
 import { detectLanguage, isLang, uiText, type UiText } from '../i18n/ui';
 
 interface AppState {
@@ -15,8 +14,6 @@ interface AppState {
   reload(): Promise<void>;
   /** False until settings and records have been read; nothing should act on the ledger before then. */
   ready: boolean;
-  demoMode: boolean;
-  setDemoMode(on: boolean): Promise<void>;
   workerName: string;
   setWorkerName(name: string): void;
   /** Optional local AI model helps with sentences the rules cannot understand. */
@@ -45,7 +42,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => detectLanguage());
   const [allEntries, setAllEntries] = useState<Entry[]>([]);
   const [allEmployers, setAllEmployers] = useState<Employer[]>([]);
-  const [demoMode, setDemoModeState] = useState(false);
   const [workerName, setWorkerNameState] = useState('');
   const [ready, setReady] = useState(false);
   const [edgeMode, setEdgeModeState] = useState(false);
@@ -73,22 +69,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [l, d, n, g] = await Promise.all([
-        db.settings.get('language'),
-        db.settings.get('demoMode'),
-        db.settings.get('workerName'),
-        db.settings.get('edgeMode'),
-      ]);
-      const [kp, uw] = await Promise.all([db.settings.get('keepProof'), db.settings.get('useWispr')]);
-      if (!alive) return;
-      if (l && isLang(l.value)) setLangState(l.value);
-      if (d?.value === true) setDemoModeState(true);
-      if (n && typeof n.value === 'string') setWorkerNameState(n.value);
-      if (g?.value === true) setEdgeModeState(true);
-      if (kp?.value === false) setKeepProofState(false);
-      if (uw?.value === false) setUseWisprState(false);
-      await reload();
-      if (alive) setReady(true);
+      try {
+        const [l, n, g] = await Promise.all([
+          db.settings.get('language'),
+          db.settings.get('workerName'),
+          db.settings.get('edgeMode'),
+        ]);
+        const [kp, uw] = await Promise.all([db.settings.get('keepProof'), db.settings.get('useWispr')]);
+        if (!alive) return;
+        if (l && isLang(l.value)) setLangState(l.value);
+        if (n && typeof n.value === 'string') setWorkerNameState(n.value);
+        if (g?.value === true) setEdgeModeState(true);
+        if (kp?.value === false) setKeepProofState(false);
+        if (uw?.value === false) setUseWisprState(false);
+        // Demo mode was removed: drop any leftover sample rows it created earlier.
+        type Flagged = { demo?: boolean };
+        await db.entries.bulkDelete(await db.entries.filter((e) => (e as Flagged).demo === true).primaryKeys());
+        await db.employers.bulkDelete(await db.employers.filter((e) => (e as Flagged).demo === true).primaryKeys());
+        await db.clips.bulkDelete(await db.clips.filter((c) => (c as Flagged).demo === true).primaryKeys());
+        await reload();
+      } catch {
+        // If IndexedDB is unavailable (e.g. private browsing), still open the UI instead of hanging on Loading.
+      } finally {
+        if (alive) setReady(true);
+      }
     })();
     return () => {
       alive = false;
@@ -119,35 +123,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void db.settings.put({ key: 'edgeMode', value: on });
   }, []);
 
-  const setDemoMode = useCallback(
-    async (on: boolean) => {
-      // Hide the content while switching, so nothing can be saved halfway: it could be
-      // tagged wrongly or deleted by the seeding.
-      setReady(false);
-      try {
-        if (on) await seedDemoData();
-        else await clearDemoData();
-        await db.settings.put({ key: 'demoMode', value: on });
-        setDemoModeState(on);
-        await reload();
-      } finally {
-        setReady(true);
-      }
-    },
-    [reload],
-  );
-
   const value = useMemo<AppState>(
     () => ({
       lang,
       setLang,
       t: uiText(lang),
-      entries: allEntries.filter((e) => (e.demo === true) === demoMode),
-      employers: allEmployers.filter((e) => (e.demo === true) === demoMode),
+      entries: allEntries,
+      employers: allEmployers,
       reload,
       ready,
-      demoMode,
-      setDemoMode,
       workerName,
       setWorkerName,
       edgeMode,
@@ -162,7 +146,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       useWispr,
       setUseWispr,
     }),
-    [keepProof, setKeepProof, useWispr, setUseWispr, lang, setLang, allEntries, allEmployers, reload, ready, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
+    [keepProof, setKeepProof, useWispr, setUseWispr, lang, setLang, allEntries, allEmployers, reload, ready, workerName, setWorkerName, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

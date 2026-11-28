@@ -1,5 +1,5 @@
-﻿import { describe, it, expect, vi } from 'vitest';
-import { parseWithFallback, checkEdge } from '../src/nlu/llmParser';
+import { describe, it, expect, vi } from 'vitest';
+import { parseWithFallback, parseMultiUtterance, checkEdge } from '../src/nlu/llmParser';
 import { parseUtterance, missingFields } from '../src/nlu/ruleParser';
 import type { Intent } from '../src/domain/types';
 
@@ -223,6 +223,35 @@ describe('checkEdge', () => {
   it('is false for a non-JSON answer (e.g. a static host with no proxy)', async () => {
     const f = vi.fn(async () => new Response('<html></html>', { status: 200 }));
     expect(await checkEdge({ fetch: f as unknown as typeof fetch })).toBe(false);
+  });
+});
+
+describe('parseMultiUtterance', () => {
+  it('splits a compound multi-amount sentence and guards amounts and employers', async () => {
+    const text = 'kal ramesh ke yahan 700 kaam kiya aur 200 kharchi liya';
+    const f = reply({
+      entries: [
+        { type: 'work', employerName: 'Ramesh', amount: 700, hours: null, dateHint: 'yesterday' },
+        { type: 'advance', employerName: 'Ramesh', amount: 200, hours: null, dateHint: 'yesterday' },
+      ],
+    });
+    const drafts = await parseMultiUtterance(text, { ...ctx, employers: ['Ramesh'] }, on(f as unknown as typeof fetch));
+    expect(drafts).toHaveLength(2);
+    expect(drafts[0]).toMatchObject({ type: 'work', employerName: 'Ramesh', amount: 700, date: '2026-11-26' });
+    expect(drafts[1]).toMatchObject({ type: 'advance', employerName: 'Ramesh', amount: 200, date: '2026-11-26' });
+  });
+
+  it('drops hallucinated amounts that were not spoken', async () => {
+    const text = 'ramesh 700 kaam kiya aur 200 advance liya';
+    const f = reply({
+      entries: [
+        { type: 'work', employerName: 'Ramesh', amount: 999, hours: null, dateHint: 'today' },
+        { type: 'advance', employerName: 'Ramesh', amount: 200, hours: null, dateHint: 'today' },
+      ],
+    });
+    const drafts = await parseMultiUtterance(text, ctx, on(f as unknown as typeof fetch));
+    expect(drafts[0].amount).toBeUndefined();
+    expect(drafts[1].amount).toBe(200);
   });
 });
 

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Employer, Entry } from '../src/domain/types';
 import { buildStatementRows, buildSummaryText, shareSummary } from '../src/domain/statement';
 import { validateEdit } from '../src/domain/edit';
-import { db, addEntry, listEntries, listEmployers, confirmByEmployer, deleteEntry, updateEntry, clearDemoData } from '../src/db/db';
-import { seedDemoData } from '../src/db/seed';
+import { db, addEntry, listEntries, listEmployers, confirmByEmployer, deleteEntry, updateEntry } from '../src/db/db';
+import { seedSampleLedger } from '../src/db/seed';
 import { balance } from '../src/domain/ledger';
 
 const ramesh: Employer = { id: 'r1', name: 'Ramesh' };
@@ -146,39 +146,15 @@ describe('editing the ledger', () => {
   });
 });
 
-describe('demo data is separate from real data', () => {
+describe('sample ledger fixture', () => {
   beforeEach(async () => {
     await db.entries.clear();
     await db.employers.clear();
   });
 
-  it('seeding demo data never touches real rows', async () => {
-    await addEntry(e({ id: 'real1', amount: 500 }));
-    await db.employers.put({ id: 'r1', name: 'Real Employer' });
-    await seedDemoData();
-    const entries = await listEntries();
-    expect(entries.find((x) => x.id === 'real1')?.demo).toBeUndefined();
-    expect(entries.filter((x) => x.demo)).toHaveLength(4);
-    expect((await listEmployers()).find((x) => x.id === 'r1')?.name).toBe('Real Employer');
-  });
-
-  it('seeding twice does not duplicate the demo data', async () => {
-    await seedDemoData();
-    await seedDemoData();
-    expect((await listEntries()).filter((x) => x.demo)).toHaveLength(4);
-    expect((await listEmployers()).filter((x) => x.demo)).toHaveLength(1);
-  });
-
-  it('clearDemoData removes only demo rows', async () => {
-    await addEntry(e({ id: 'real2', amount: 500 }));
-    await seedDemoData();
-    await clearDemoData();
-    expect((await listEntries()).map((x) => x.id)).toEqual(['real2']);
-    expect(await listEmployers()).toHaveLength(0);
-  });
-
-  it('seedDemoData({demo:false}) creates ordinary rows (used by tests)', async () => {
-    await seedDemoData({ demo: false });
-    expect((await listEntries()).every((x) => !x.demo)).toBe(true);
+  it('seeds a sample ledger of 3 work days and 1 advance', async () => {
+    await seedSampleLedger();
+    expect(await listEntries()).toHaveLength(4);
+    expect(await listEmployers()).toHaveLength(1);
   });
 });

@@ -10,8 +10,34 @@ export interface TranscribeRequest {
   names: string[];
 }
 
-const LANG_CODE: Record<string, string> = { 'en-IN': 'en', 'hi-IN': 'hi', 'kn-IN': 'kn' };
+/**
+ * Bilingual language hints for Wispr Flow so Hinglish / Kanglish code-switching
+ * is transcribed naturally instead of forcing a single script/language.
+ */
+const LANG_CODES: Record<string, string[]> = {
+  'en-IN': ['en'],
+  'hi-IN': ['hi', 'en'],
+  'kn-IN': ['kn', 'en'],
+};
 const MAX_AUDIO_CHARS = 4_000_000; // ~ 2 minutes of 16 kHz audio as base64
+
+/** Indian daily-wage & construction vocabulary passed to Wispr Flow's dictionary_context. */
+export const DOMAIN_DICTIONARY = [
+  'BoliHisab',
+  'dihadi',
+  'kharchi',
+  'hajri',
+  'hisab',
+  'pagar',
+  'udhar',
+  'baaki',
+  'rupaye',
+  'mistri',
+  'thekedar',
+  'advance',
+  'overtime',
+  'half day',
+];
 
 export function validateTranscribe(body: unknown): string | null {
   if (typeof body !== 'object' || body === null) return 'body must be an object';
@@ -19,7 +45,7 @@ export function validateTranscribe(body: unknown): string | null {
   if (typeof b.audio !== 'string' || !b.audio || b.audio.length > MAX_AUDIO_CHARS || !/^[A-Za-z0-9+/]+={0,2}$/.test(b.audio)) {
     return 'audio must be base64';
   }
-  if (typeof b.lang !== 'string' || !(b.lang in LANG_CODE)) return 'unsupported language';
+  if (typeof b.lang !== 'string' || !(b.lang in LANG_CODES)) return 'unsupported language';
   if (!Array.isArray(b.names) || b.names.length > 100 || b.names.some((n) => typeof n !== 'string' || n.length > 60)) {
     return 'names must be a short list of strings';
   }
@@ -35,13 +61,14 @@ function textOf(data: unknown): string | null {
 
 /** Returns the transcript, or throws (never including the key in the error). */
 export async function transcribeWithWispr(key: string, req: TranscribeRequest, fetchImpl: typeof fetch = fetch, timeoutMs = 20000): Promise<string> {
+  const dictionary = Array.from(new Set([...req.names, ...DOMAIN_DICTIONARY]));
   const res = await fetchImpl(WISPR_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       audio: req.audio,
-      language: [LANG_CODE[req.lang]],
-      context: { app: { name: 'BoliHisab', type: 'other' }, dictionary_context: req.names },
+      language: LANG_CODES[req.lang],
+      context: { app: { name: 'BoliHisab', type: 'other' }, dictionary_context: dictionary },
     }),
     signal: AbortSignal.timeout(timeoutMs),
   });

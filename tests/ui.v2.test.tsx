@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import App from '../src/App';
 import { db, listEntries } from '../src/db/db';
-import { seedDemoData } from '../src/db/seed';
+import { seedSampleLedger } from '../src/db/seed';
 
 beforeEach(async () => {
   await db.entries.clear();
@@ -18,16 +18,10 @@ const type = async (text: string) => {
 const ramesh = () => db.employers.put({ id: 'r1', name: 'Ramesh', dailyRate: 700 });
 
 describe('multi-day entry with the usual rate', () => {
-  it('shows the dates, "3 × ₹700", the total and the usual-rate note, then saves 3 days', async () => {
+  it('saves 3 days directly using the usual rate and shows "3 × ₹700"', async () => {
     await ramesh();
     render(<App />);
     await type('Ramesh ke yahan 3 din kaam kiya');
-    const card = await screen.findByTestId('confirm-card');
-    expect(within(card).getAllByTestId('day-chip')).toHaveLength(3);
-    expect(card).toHaveTextContent('3 × ₹700');
-    expect(card).toHaveTextContent('₹2,100');
-    expect(card).toHaveTextContent(/usual rate/i);
-    fireEvent.click(within(card).getByRole('button', { name: /^yes$/i }));
     await waitFor(async () => expect(await listEntries()).toHaveLength(3));
     expect(await screen.findByTestId('saved-bar')).toHaveTextContent('3 × ₹700');
   });
@@ -36,7 +30,6 @@ describe('multi-day entry with the usual rate', () => {
     await ramesh();
     render(<App />);
     await type('Ramesh ke yahan 3 din kaam kiya');
-    fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^yes$/i }));
     fireEvent.click(within(await screen.findByTestId('saved-bar')).getByRole('button', { name: /undo/i }));
     await waitFor(async () => expect(await listEntries()).toHaveLength(0));
   });
@@ -44,65 +37,42 @@ describe('multi-day entry with the usual rate', () => {
   it('learns a new employer rate from the first spoken work amount', async () => {
     render(<App />);
     await type('Aaj Mahesh ke yahan 600 rupaye kaam kiya');
-    fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^yes$/i }));
     await waitFor(async () => expect((await db.employers.toArray()).find((e) => e.name === 'Mahesh')?.dailyRate).toBe(600));
   });
 });
 
 describe('voice commands', () => {
   it('"Ramesh ka hisab dikhao" opens the statement', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     await type('Ramesh ka hisab dikhao');
     expect(await screen.findByTestId('statement')).toHaveTextContent('Ramesh');
   });
 
-  it('"Ramesh ko yaad dilao" previews the WhatsApp message; Send opens WhatsApp with it', async () => {
-    await seedDemoData({ demo: false });
+  it('"Ramesh ko yaad dilao" prepares the WhatsApp link directly', async () => {
+    await seedSampleLedger();
     await db.settings.put({ key: 'workerName', value: 'Manju' });
-    const open = vi.spyOn(window, 'open').mockReturnValue(null);
     render(<App />);
     await type('Ramesh ko yaad dilao');
-    const card = await screen.findByTestId('reminder-card');
-    expect(card).toHaveTextContent('₹1,100');
-    expect(card).toHaveTextContent('Manju');
-    expect(open).not.toHaveBeenCalled();
-    fireEvent.click(within(card).getByRole('button', { name: /send on whatsapp/i }));
-    expect(open).toHaveBeenCalledTimes(1);
-    expect(String(open.mock.calls[0][0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
-    expect(decodeURIComponent(String(open.mock.calls[0][0]).split('text=')[1])).toContain('₹1,100');
-    await waitFor(() => expect(screen.queryByTestId('reminder-card')).toBeNull());
-    expect(open).toHaveBeenCalledTimes(1);
+    const link = await screen.findByRole('link', { name: /open whatsapp/i });
+    const href = link.getAttribute('href')!;
+    expect(href).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(decodeURIComponent(href.split('text=')[1])).toContain('₹1,100');
+    expect(decodeURIComponent(href.split('text=')[1])).toContain('Manju');
   });
 
-  it('a reminder can be cancelled without opening anything', async () => {
-    await seedDemoData({ demo: false });
-    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  it('"aakhri entry hatao" deletes the newest entry directly', async () => {
+    await seedSampleLedger();
     render(<App />);
-    await type('Ramesh ko yaad dilao');
-    fireEvent.click(within(await screen.findByTestId('reminder-card')).getByRole('button', { name: /^no$/i }));
-    await waitFor(() => expect(screen.queryByTestId('reminder-card')).toBeNull());
-    expect(open).not.toHaveBeenCalled();
-  });
-
-  it('"aakhri entry hatao" asks first, then deletes the newest entry', async () => {
-    await seedDemoData({ demo: false });
-    render(<App />);
-    await type('aakhri entry hatao');
-    const card = await screen.findByTestId('action-card');
-    expect(card).toHaveTextContent(/delete/i);
     expect(await listEntries()).toHaveLength(4);
-    fireEvent.click(within(card).getByRole('button', { name: /^yes$/i }));
+    await type('aakhri entry hatao');
     await waitFor(async () => expect(await listEntries()).toHaveLength(3));
   });
 
-  it('"Ramesh ka rate 750 hai" changes the rate after yes', async () => {
+  it('"Ramesh ka rate 750 hai" changes the rate directly', async () => {
     await ramesh();
     render(<App />);
     await type('Ramesh ka rate 750 hai');
-    const card = await screen.findByTestId('action-card');
-    expect(card).toHaveTextContent('₹750');
-    fireEvent.click(within(card).getByRole('button', { name: /^yes$/i }));
     await waitFor(async () => expect((await db.employers.get('r1'))?.dailyRate).toBe(750));
   });
 

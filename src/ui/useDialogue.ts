@@ -3,7 +3,8 @@ import { db, deleteEntry, newId } from '../db/db';
 import { localISODate } from '../domain/dates';
 import type { Draft, Entry } from '../domain/types';
 import { inr } from '../i18n/ui';
-import { parseWithFallback } from '../nlu/llmParser';
+import { parseMultiUtterance, parseWithFallback } from '../nlu/llmParser';
+import { moneyAmounts } from '../nlu/normalize';
 import {
   CONFIDENCE_MIN,
   initialState,
@@ -49,7 +50,7 @@ export interface DialogueView {
   whatsappText?: string;
   listening: boolean;
   /** Which engine is listening right now. */
-  engine?: 'wispr' | 'browser';
+  engine?: 'wispr' | 'sarvam' | 'browser';
   /** Words heard so far, while still listening (browser speech only). */
   interim: string;
   /** Microphone level 0..1 for the waveform. */
@@ -111,17 +112,46 @@ export function useDialogue(): UseDialogue {
   const levelTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   /** The recording of the sentence that started the current entry; attached when it is saved. */
   const pendingClip = useRef<Recording | undefined>(undefined);
+  /** Extra drafts from a multi-entry utterance ("700 kaam kiya aur 200 kharchi liya"), saved/clarified in order. */
+  const queuedDrafts = useRef<Draft[]>([]);
+  /** Cached server STT detection so mic tap starts recording with 0ms preflight delay. */
+  const cachedServerStt = useRef<'wispr' | 'sarvam' | 'browser' | null>(null);
   const [view, setView] = useState<DialogueView>(INITIAL_VIEW);
+
+  const detectServerStt = useCallback(async (useWispr: boolean): Promise<'wispr' | 'sarvam' | 'browser'> => {
+    if (cachedServerStt.current === 'wispr') return useWispr ? 'wispr' : 'browser';
+    if (cachedServerStt.current !== null) return cachedServerStt.current;
+    const wispr = await wisprConfigured();
+    if (wispr) {
+      cachedServerStt.current = 'wispr';
+      return useWispr ? 'wispr' : 'browser';
+    }
+    try {
+      const res = await fetch('/api/voice-health');
+      if (res.ok) {
+        const vh = (await res.json()) as { sarvamStt?: unknown };
+        if (vh?.sarvamStt === true) {
+          cachedServerStt.current = 'sarvam';
+          return 'sarvam';
+        }
+      }
+    } catch {
+      // offline or mocked environment
+    }
+    cachedServerStt.current = 'browser';
+    return 'browser';
+  }, []);
 
   useEffect(() => {
     mounted.current = true;
+    if (canRecord()) void detectServerStt(latest.current.useWispr);
     return () => {
       mounted.current = false;
       clearTimeout(savedTimer.current);
       clearInterval(levelTimer.current);
       session.current?.cancel();
     };
-  }, []);
+  }, [detectServerStt]);
 
   const watchLevel = (s: RecorderSession | null) => {
     clearInterval(levelTimer.current);
@@ -160,14 +190,18 @@ export function useDialogue(): UseDialogue {
       }
 
       let ev = input;
-      // Edge mode: when the rules cannot fully understand a sentence, a local model may help.
+      // Edge mode: when the rules cannot fully understand a sentence, Sarvam 105B / local model may help.
       if (input.type === 'heard' && a.edgeMode && input.text.trim() && input.confidence >= CONFIDENCE_MIN && state.current.phase !== 'CLARIFY') {
         if (mounted.current) setView((v) => ({ ...v, thinking: true }));
-        const parsed = await parseWithFallback(
-          input.text,
-          { today: ctx.today, employers: a.employers.map((e) => e.name), lang: a.lang },
-          { enabled: true },
-        );
+        const parseCtx = { today: ctx.today, employers: a.employers.map((e) => e.name), lang: a.lang };
+        let parsed = await parseWithFallback(input.text, parseCtx, { enabled: true });
+        if (parsed.kind === 'unknown' && new Set(moneyAmounts(input.text)).size > 1) {
+          const multi = await parseMultiUtterance(input.text, parseCtx, { enabled: true });
+          if (multi.length > 0) {
+            parsed = { kind: 'record', draft: multi[0] };
+            queuedDrafts.current = multi.slice(1);
+          }
+        }
         ev = { ...input, parsed };
         if (mounted.current) setView((v) => ({ ...v, thinking: false }));
       }
@@ -187,18 +221,16 @@ export function useDialogue(): UseDialogue {
       }
 
       // Persist before speaking "Saved" so the words are true.
-      // In demo mode everything created is flagged, so it can never mix with real records.
-      const flag = a.demoMode ? { demo: true } : {};
       let saves: Entry[] = r.saves ?? (r.save ? [r.save] : []);
       if (saves.length && a.keepProof && pendingClip.current) {
         // One clip backs every day of a "3 din" sentence.
-        const clipId = await saveClip(pendingClip.current.blob, pendingClip.current.durationMs, { demo: a.demoMode });
+        const clipId = await saveClip(pendingClip.current.blob, pendingClip.current.durationMs);
         saves = saves.map((s) => ({ ...s, clipId }));
       }
       if (saves.length) pendingClip.current = undefined;
       let changed = false;
       if (r.newEmployer) {
-        await db.employers.put({ ...r.newEmployer, ...flag });
+        await db.employers.put(r.newEmployer);
         changed = true;
       }
       if (r.updateEmployer) {
@@ -206,7 +238,7 @@ export function useDialogue(): UseDialogue {
         changed = true;
       }
       if (saves.length) {
-        await db.entries.bulkPut(saves.map((s) => ({ ...s, ...flag })));
+        await db.entries.bulkPut(saves);
         changed = true;
       }
       if (r.deleteEntryId) {
@@ -224,16 +256,54 @@ export function useDialogue(): UseDialogue {
         savedTimer.current = setTimeout(clearSaved, SAVED_BAR_MS);
       }
       if (r.navigate) a.openStatement(r.navigate.employerId);
-      if (r.openWhatsApp && viaVoice && mounted.current) {
-        // No tap happened, so the browser may block a pop-up: offer a button instead.
+      if (r.openWhatsApp && mounted.current) {
+        // Show an explicit tap button so browsers never block opening WhatsApp.
         setView((v) => ({ ...v, whatsappText: r.openWhatsApp }));
       }
 
-      if (r.speak) await speak(r.speak, a.lang);
-      // Hands-free: after a spoken turn that expects an answer, listen again.
-      const expectsAnswer = r.state.phase === 'CLARIFY' || r.state.phase === 'CONFIRM';
-      if (viaVoice && expectsAnswer && !r.needTyping && mounted.current && isSpeechSupported()) {
-        await listenRef.current();
+      // If this was a multi-entry utterance, process any remaining queued drafts directly (auto-save or clarify).
+      let activePhase = r.state.phase;
+      let activeNeedTyping = r.needTyping;
+      while ((activePhase === 'SAVED' || activePhase === 'IDLE') && queuedDrafts.current.length > 0 && mounted.current) {
+        const nextDraft = queuedDrafts.current.shift()!;
+        const nextR = step(
+          r.state,
+          { type: 'heard', text: nextDraft.rawTranscript ?? '', confidence: 1, parsed: { kind: 'record', draft: nextDraft } },
+          ctx,
+        );
+        state.current = nextR.state;
+        activePhase = nextR.state.phase;
+        activeNeedTyping = nextR.needTyping;
+        const extraSaves: Entry[] = nextR.saves ?? (nextR.save ? [nextR.save] : []);
+        if (nextR.newEmployer) await db.employers.put(nextR.newEmployer);
+        if (nextR.updateEmployer) await db.employers.update(nextR.updateEmployer.id, { dailyRate: nextR.updateEmployer.dailyRate });
+        if (extraSaves.length) {
+          await db.entries.bulkPut(extraSaves);
+          await a.reload();
+        }
+        setView((v) => ({
+          ...v,
+          phase: nextR.state.phase,
+          phrase: nextR.speak ?? v.phrase,
+          draft: nextR.state.phase === 'CONFIRM' ? nextR.state.draft : undefined,
+          action: nextR.state.phase === 'CONFIRM' ? nextR.state.action : undefined,
+          needTyping: nextR.needTyping ?? false,
+        }));
+        if (activePhase === 'CLARIFY' || activePhase === 'CONFIRM') {
+          if (nextR.speak) await speak(nextR.speak, a.lang);
+          break;
+        }
+      }
+
+      // Hands-free: only await TTS when we are about to open the mic again for a follow-up answer.
+      const expectsAnswer = activePhase === 'CLARIFY' || activePhase === 'CONFIRM';
+      if (expectsAnswer) {
+        if (r.speak) await speak(r.speak, a.lang);
+        if (viaVoice && !activeNeedTyping && mounted.current && (isSpeechSupported() || canRecord())) {
+          await listenRef.current();
+        }
+      } else if (r.speak) {
+        void speak(r.speak, a.lang);
       }
     },
     [clearSaved],
@@ -256,16 +326,24 @@ export function useDialogue(): UseDialogue {
       return { ...r, audio };
     } catch (e) {
       s?.cancel();
+      session.current = null;
       if (userCancelled.current) return null;
+      // On some phones/desktops, holding MediaRecorder locks the mic so SpeechRecognition fires audio-capture.
+      // Retry SpeechRecognition alone without simultaneous recording so voice still works cleanly.
+      if (e === 'audio_busy' && s) {
+        await new Promise<void>((res) => setTimeout(res, 100));
+        const r = await listen(a.lang, { onInterim: (text) => mounted.current && setView((v) => ({ ...v, interim: text })) });
+        return { ...r };
+      }
       throw e;
     }
   };
 
-  /** Wispr Flow: record (auto-stops after the user finishes), then transcribe on our server. */
-  const captureWithWispr = async (): Promise<Heard | null | 'failed'> => {
+  /** Server STT (Wispr Flow or Sarvam Saaras v4): record cleanly, then transcribe on our server. */
+  const captureWithServer = async (kind: 'wispr' | 'sarvam'): Promise<Heard | null | 'failed'> => {
     const a = latest.current;
-    if (mounted.current) setView((v) => ({ ...v, engine: 'wispr' }));
-    const s = await startRecorder({ autoStop: true });
+    if (mounted.current) setView((v) => ({ ...v, engine: kind }));
+    const s = await startRecorder({ autoStop: true, silence: { threshold: 0.01, silenceMs: 850 } });
     session.current = s;
     watchLevel(s);
     const rec = await s.result;
@@ -275,7 +353,6 @@ export function useDialogue(): UseDialogue {
     if (mounted.current) setView((v) => ({ ...v, thinking: true }));
     const text = await transcribeRecording(rec, a.lang, a.employers.map((e) => e.name));
     if (mounted.current) setView((v) => ({ ...v, thinking: false }));
-    // Wispr gives no confidence score; the read-back and yes/no step protect against mis-hearing.
     return text ? { text, confidence: 0.9, audio: rec } : 'failed';
   };
 
@@ -286,10 +363,10 @@ export function useDialogue(): UseDialogue {
     let heard: Heard | null;
     try {
       const a = latest.current;
-      const wispr = a.useWispr && canRecord() && (await wisprConfigured());
-      let result: Heard | null | 'failed' = wispr ? await captureWithWispr() : 'failed';
+      const serverKind = canRecord() ? await detectServerStt(a.useWispr) : 'browser';
+      let result: Heard | null | 'failed' = serverKind !== 'browser' ? await captureWithServer(serverKind) : 'failed';
       if (result === 'failed') {
-        if (wispr && mounted.current) setView((v) => ({ ...v, wisprFailed: true, phrase: a.t.wisprFallback }));
+        if (serverKind === 'wispr' && mounted.current) setView((v) => ({ ...v, wisprFailed: true, phrase: a.t.wisprFallback }));
         result = userCancelled.current ? null : await captureWithBrowser();
       }
       heard = result;
@@ -309,7 +386,7 @@ export function useDialogue(): UseDialogue {
     if (heard === null) return; // the user pressed Cancel
     await run({ type: 'heard', text: heard.text, confidence: heard.confidence }, true, heard.audio);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run]);
+  }, [detectServerStt, run]);
   listenRef.current = listenTurn;
 
   const undo = useCallback(async () => {
@@ -338,7 +415,7 @@ export function useDialogue(): UseDialogue {
     undo,
     dismissWhatsApp: () => setView((v) => ({ ...v, whatsappText: undefined })),
     stopListening: () => {
-      if (session.current && view.engine === 'wispr') session.current.stop();
+      if (session.current && (view.engine === 'wispr' || view.engine === 'sarvam')) session.current.stop();
       else stopListening();
     },
     cancelListening: () => {

@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../src/App';
 import { db, listEntries } from '../src/db/db';
@@ -31,23 +31,19 @@ describe('edge mode in the app', () => {
     render(<App />);
     await type(NO_EMPLOYER);
     expect(await screen.findByText(/Which employer/i)).toBeInTheDocument(); // rules alone cannot find the name
-    expect(f).not.toHaveBeenCalled();
+    expect(f.mock.calls.filter(([url]) => String(url).includes('/api/parse'))).toHaveLength(0);
   });
 
-  it('when on, a sentence the rules cannot finish is completed by the model, then confirmed by the user', async () => {
+  it('when on, a sentence the rules cannot finish is completed by the model and saved', async () => {
     await db.settings.put({ key: 'edgeMode', value: true });
     vi.stubGlobal('fetch', modelSays({ kind: 'record', type: 'work', employerName: 'Ramesh', amount: 700, hours: null, date: null, q: null, period: null }));
     render(<App />);
     await type(NO_EMPLOYER);
-    const readBack = await screen.findByText(/Shall I save it/i);
-    expect(readBack).toHaveTextContent('Ramesh');
-    expect(readBack).toHaveTextContent('700');
-    expect(await listEntries()).toHaveLength(0); // still needs the user's yes
-    fireEvent.click(screen.getByRole('button', { name: /^yes$/i }));
     await waitFor(async () => expect(await listEntries()).toHaveLength(1));
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('Ramesh ₹700');
   });
 
-  it('an invented amount from the model never reaches the read-back', async () => {
+  it('an invented amount from the model never reaches the ledger', async () => {
     await db.settings.put({ key: 'edgeMode', value: true });
     vi.stubGlobal('fetch', modelSays({ kind: 'record', type: 'payment', employerName: 'Ramesh', amount: 800, hours: null, date: null, q: null, period: null }));
     render(<App />);
@@ -63,7 +59,8 @@ describe('edge mode in the app', () => {
     }));
     render(<App />);
     await type('Ramesh ne 500 rupaye diye');
-    expect(await screen.findByText(/Shall I save it/i)).toBeInTheDocument();
+    await waitFor(async () => expect(await listEntries()).toHaveLength(1));
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('Ramesh ₹500');
   });
 });
 
@@ -89,6 +86,21 @@ describe('edge mode in Settings', () => {
     expect(await screen.findByText(/npm run edge/i)).toBeInTheDocument();
   });
 
+  it('shows Sarvam 105B connected when /api/health reports provider sarvam', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url === '/api/health'
+          ? new Response(JSON.stringify({ ok: true, provider: 'sarvam', model: 'sarvam-105b' }), { status: 200 })
+          : new Response(JSON.stringify({}), { status: 200 }),
+      ),
+    );
+    render(<App />);
+    await openSettings();
+    fireEvent.click(await screen.findByRole('switch', { name: /smart helper/i }));
+    expect(await screen.findByText(/connected to sarvam 105b/i)).toBeInTheDocument();
+  });
+
   it('turns off again', async () => {
     await db.settings.put({ key: 'edgeMode', value: true });
     vi.stubGlobal('fetch', modelSays({}));
@@ -101,3 +113,10 @@ describe('edge mode in Settings', () => {
   });
 });
 
+describe('Wispr Dictate button removed', () => {
+  it('does not show a Wispr Dictate button', async () => {
+    render(<App />);
+    await screen.findByText(/BoliHisab/);
+    expect(screen.queryByRole('button', { name: /wispr dictate/i })).toBeNull();
+  });
+});

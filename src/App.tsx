@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Lang } from './domain/types';
 import { LANGUAGES } from './i18n/ui';
 import { AppProvider, useApp, type Tab } from './ui/AppContext';
@@ -8,20 +9,80 @@ import Payments from './ui/Payments';
 import Settings from './ui/Settings';
 import Statement from './ui/Statement';
 
-
 const SHORT: Record<Lang, string> = { 'kn-IN': 'ಕ', 'hi-IN': 'हि', 'en-IN': 'EN' };
 
-function Header() {
-  const { lang, setLang } = useApp();
+function BrandMark() {
   return (
-    <header className="no-print flex items-center justify-between gap-3 px-4 pb-2 pt-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-700 text-2xl shadow">
-          🎙️
-        </span>
-        <h1 className="text-2xl font-extrabold leading-tight text-teal-800">BoliHisab</h1>
+    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0D1609] text-[#D9F76E]">
+      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v10" />
+        <path d="M8.5 7.5a3.5 3.5 0 0 1 7 0v2.5a3.5 3.5 0 0 1-7 0z" fill="currentColor" fillOpacity="0.22" />
+        <path d="M5.5 10.5a6.5 6.5 0 0 0 13 0" />
+        <path d="M12 17v4" />
+        <path d="M9 21h6" />
+      </svg>
+    </span>
+  );
+}
+
+function TabIcon({ id }: { id: Tab }) {
+  const cls = 'h-5 w-5';
+  switch (id) {
+    case 'home':
+      return (
+        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z" />
+        </svg>
+      );
+    case 'ledger':
+      return (
+        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="3" width="16" height="18" rx="3" />
+          <path d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+      );
+    case 'employers':
+      return (
+        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="8" r="3.2" />
+          <path d="M3.5 19.5a5.5 5.5 0 0 1 11 0" />
+          <circle cx="17.5" cy="9" r="2.3" />
+          <path d="M16.5 14.5a4.5 4.5 0 0 1 4 4.5" />
+        </svg>
+      );
+    case 'payments':
+      return (
+        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2.5" y="5.5" width="19" height="13" rx="3" />
+          <circle cx="12" cy="12" r="2.5" />
+          <path d="M6 12h.01M18 12h.01" />
+        </svg>
+      );
+    case 'settings':
+      return (
+        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      );
+  }
+}
+
+function Header({ seamless }: { seamless: boolean }) {
+  const { t, lang, setLang } = useApp();
+  return (
+    <header
+      className={`no-print flex items-center justify-between gap-2 bg-[#C4F02E] px-4 pt-3.5 ${
+        seamless ? 'pb-2' : 'rounded-b-[24px] pb-3.5 shadow-md'
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <BrandMark />
+        <div className="min-w-0">
+          <h1 className="text-xl font-extrabold tracking-tight text-[#0B1307]">BoliHisab</h1>
+        </div>
       </div>
-      <div role="group" aria-label="Language" className="flex shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-slate-300">
+      <div role="group" aria-label="Language" className="flex shrink-0 overflow-hidden rounded-full bg-[#0D1609]/12 p-0.5">
         {LANGUAGES.map((l) => (
           <button
             key={l.lang}
@@ -29,7 +90,9 @@ function Header() {
             aria-label={`Language: ${l.label}`}
             aria-pressed={lang === l.lang}
             onClick={() => setLang(l.lang)}
-            className={`h-11 w-11 text-base font-bold transition-colors ${lang === l.lang ? 'bg-teal-700 text-white' : 'text-slate-700 active:bg-slate-100'}`}
+            className={`h-8 w-9 rounded-full text-xs font-extrabold transition-all ${
+              lang === l.lang ? 'bg-[#0D1609] text-[#D9F76E]' : 'text-[#0B1307] hover:bg-[#0D1609]/10'
+            }`}
           >
             {SHORT[l.lang]}
           </button>
@@ -42,33 +105,28 @@ function Header() {
 function Loading() {
   const { t } = useApp();
   return (
-    <div role="status" className="flex flex-col items-center gap-3 py-20 text-slate-600">
-      <span aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-teal-600" />
-      <p>{t.loading}</p>
+    <div role="status" className="flex flex-col items-center gap-3 py-20 text-[#B8C9AA]">
+      <span aria-hidden="true" className="h-9 w-9 animate-spin rounded-full border-4 border-[#223519] border-t-[#C9F43A]" />
+      <p className="text-sm font-semibold">{t.loading}</p>
     </div>
   );
 }
 
 function Shell() {
-  const { t, demoMode, ready, tab, setTab, statementFor, openStatement, closeStatement } = useApp();
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'home', label: t.navHome, icon: '🏠' },
-    { id: 'ledger', label: t.navLedger, icon: '📒' },
-    { id: 'employers', label: t.navEmployers, icon: '👷' },
-    { id: 'payments', label: t.navPayments, icon: '💰' },
-    { id: 'settings', label: t.navSettings, icon: '⚙️' },
+  const { t, ready, tab, setTab, statementFor, openStatement, closeStatement } = useApp();
+  const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
+    { id: 'home', label: t.navHome, icon: <TabIcon id="home" /> },
+    { id: 'ledger', label: t.navLedger, icon: <TabIcon id="ledger" /> },
+    { id: 'employers', label: t.navEmployers, icon: <TabIcon id="employers" /> },
+    { id: 'payments', label: t.navPayments, icon: <TabIcon id="payments" /> },
+    { id: 'settings', label: t.navSettings, icon: <TabIcon id="settings" /> },
   ];
+  const isHome = ready && tab === 'home';
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col">
-      <Header />
-      {demoMode && (
-        <div role="status" className="no-print mx-4 rounded-2xl bg-amber-500 px-4 py-2 text-center font-bold text-black">
-          <span>{t.demoBanner}</span>
-          <span className="block text-sm font-normal">{t.demoNote}</span>
-        </div>
-      )}
-      <main className="flex-1 px-4 py-4" aria-busy={!ready}>
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-[#0B1307]">
+      <Header seamless={isHome} />
+      <main className={`flex-1 pb-24 ${isHome ? '' : 'px-4 pt-4'}`} aria-busy={!ready}>
         {/* Wait for the ledger to load: acting on an empty ledger would give wrong answers. */}
         {!ready && <Loading />}
         {ready && tab === 'home' && <Home />}
@@ -82,27 +140,26 @@ function Shell() {
         {ready && tab === 'payments' && <Payments />}
         {ready && tab === 'settings' && <Settings />}
       </main>
-      <nav className="no-print sticky bottom-0 grid grid-cols-5 border-t border-slate-200 bg-white/95 backdrop-blur">
-        {tabs.map((x) => {
-          const active = tab === x.id;
-          return (
-            <button
-              key={x.id}
-              type="button"
-              aria-current={active ? 'page' : undefined}
-              onClick={() => setTab(x.id)}
-              className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-semibold leading-tight ${
-                active ? 'text-teal-700' : 'text-slate-600 active:bg-slate-100'
-              }`}
-            >
-              {active && <span aria-hidden="true" className="absolute inset-x-3 top-0 h-1 rounded-b-full bg-teal-600" />}
-              <span aria-hidden="true" className="text-2xl leading-none">
-                {x.icon}
-              </span>
-              <span>{x.label}</span>
-            </button>
-          );
-        })}
+      <nav className="no-print fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-3 pb-3">
+        <div className="grid grid-cols-5 rounded-full bg-gradient-to-r from-[#C8F135] to-[#E2FA84] p-1.5 text-[#0B1307] shadow-[0_10px_30px_rgba(0,0,0,0.55)]">
+          {tabs.map((x) => {
+            const active = tab === x.id;
+            return (
+              <button
+                key={x.id}
+                type="button"
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setTab(x.id)}
+                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-full px-1 text-[11px] font-bold leading-tight transition-all ${
+                  active ? 'bg-[#0E180A] text-[#D9F76E] shadow-sm' : 'text-[#13200B]/80 hover:text-[#0B1307]'
+                }`}
+              >
+                <span aria-hidden="true">{x.icon}</span>
+                <span className="truncate">{x.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

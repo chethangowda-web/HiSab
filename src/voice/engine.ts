@@ -2,16 +2,25 @@ import type { Lang } from '../domain/types';
 import type { Recording } from './recorder';
 import { arrayBufferToBase64, toWav16kMono } from './wav';
 
-/** True if our server has a Wispr Flow key (it never sends the key itself). */
-export async function wisprConfigured(fetchImpl: typeof fetch = fetch): Promise<boolean> {
+export type VoiceEngineKind = 'wispr' | 'sarvam' | 'browser';
+
+/** Detects which server-side STT engine is available (Wispr Flow first, then Sarvam Saaras v4). */
+export async function voiceEngineKind(fetchImpl: typeof fetch = fetch): Promise<VoiceEngineKind> {
   try {
     const res = await fetchImpl('/api/voice-health');
-    if (!res.ok) return false;
-    const data = (await res.json()) as { wispr?: unknown };
-    return data?.wispr === true;
+    if (!res.ok) return 'browser';
+    const data = (await res.json()) as { wispr?: unknown; sarvamStt?: unknown };
+    if (data?.wispr === true) return 'wispr';
+    if (data?.sarvamStt === true) return 'sarvam';
+    return 'browser';
   } catch {
-    return false;
+    return 'browser';
   }
+}
+
+/** True if our server has a Wispr Flow key (it never sends the key itself). */
+export async function wisprConfigured(fetchImpl: typeof fetch = fetch): Promise<boolean> {
+  return (await voiceEngineKind(fetchImpl)) === 'wispr';
 }
 
 /** Decodes a browser recording and re-encodes it as the 16 kHz mono WAV that Wispr Flow expects. */

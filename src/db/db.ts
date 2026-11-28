@@ -13,7 +13,6 @@ export interface Clip {
   mime: string;
   durationMs: number;
   createdAt: number;
-  demo?: boolean;
 }
 
 class BoliDB extends Dexie {
@@ -85,20 +84,10 @@ export async function deleteEntry(id: string): Promise<void> {
   }
 }
 
-export async function saveClip(blob: Blob, durationMs: number, opts: { demo?: boolean } = {}): Promise<string> {
+export async function saveClip(blob: Blob, durationMs: number): Promise<string> {
   const id = newId();
-  await db.clips.put({ id, blob, mime: blob.type || 'audio/webm', durationMs, createdAt: Date.now(), ...(opts.demo ? { demo: true } : {}) });
+  await db.clips.put({ id, blob, mime: blob.type || 'audio/webm', durationMs, createdAt: Date.now() });
   return id;
 }
 
 export const getClip = (id: string): Promise<Clip | undefined> => db.clips.get(id);
-
-/** Removes only demo-mode rows; real records are never touched. */
-export async function clearDemoData(): Promise<void> {
-  const entryIds = await db.entries.filter((e) => e.demo === true).primaryKeys();
-  const employerIds = await db.employers.filter((e) => e.demo === true).primaryKeys();
-  const clipIds = await db.clips.filter((c) => c.demo === true).primaryKeys();
-  await db.entries.bulkDelete(entryIds);
-  await db.employers.bulkDelete(employerIds);
-  await db.clips.bulkDelete(clipIds);
-}

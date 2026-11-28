@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { checkEdge } from '../nlu/llmParser';
+import { edgeInfo } from '../nlu/llmParser';
 import { wisprConfigured } from '../voice/engine';
 import { LANGUAGES } from '../i18n/ui';
 import { db } from '../db/db';
@@ -10,14 +10,14 @@ import Switch from './Switch';
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-      <h2 className="text-xl font-bold">{title}</h2>
+    <section className="fintech-card flex flex-col gap-3 p-4">
+      <h2 className="text-lg font-extrabold text-[#F3F7EC]">{title}</h2>
       {children}
     </section>
   );
 }
 
-type EdgeStatus = 'idle' | 'checking' | 'ok' | 'down';
+type EdgeStatus = 'idle' | 'checking' | 'ok' | 'sarvam' | 'down';
 
 /** One employer's usual daily rate; saved when the field loses focus, ignored if not a valid amount. */
 function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }) {
@@ -36,29 +36,29 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
     }
   };
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[#263A1A] bg-[#0F180A] p-2.5">
       <Avatar name={name} size="h-10 w-10 text-lg" />
-      <span className="min-w-[7rem] flex-1 text-lg font-semibold">{name}</span>
+      <span className="min-w-[7rem] flex-1 text-lg font-bold text-[#F3F7EC]">{name}</span>
       {/* wraps to its own line on narrow screens instead of squeezing the name */}
       <span className="ml-auto flex items-center gap-2">
-      <span className="text-lg text-slate-500">₹</span>
-      <input
-        aria-label={`${name} ${t.dailyRateAria}`}
-        inputMode="numeric"
-        value={value}
-        onChange={(ev) => setValue(ev.target.value)}
-        onBlur={() => void save()}
-        onKeyDown={(ev) => ev.key === 'Enter' && (ev.target as HTMLInputElement).blur()}
-        className="h-12 w-24 rounded-xl border border-slate-300 px-3 text-right text-xl"
-      />
-      <span className="text-slate-500">{t.perDayUnit}</span>
+        <span className="text-lg font-bold text-[#9BB08B]">₹</span>
+        <input
+          aria-label={`${name} ${t.dailyRateAria}`}
+          inputMode="numeric"
+          value={value}
+          onChange={(ev) => setValue(ev.target.value)}
+          onBlur={() => void save()}
+          onKeyDown={(ev) => ev.key === 'Enter' && (ev.target as HTMLInputElement).blur()}
+          className="h-12 w-24 rounded-2xl border border-[#344E24] bg-[#16220F] px-3 text-right text-xl font-bold tabular-nums text-[#F3F7EC]"
+        />
+        <span className="text-sm text-[#9BB08B]">{t.perDayUnit}</span>
       </span>
     </li>
   );
 }
 
 export default function Settings() {
-  const { t, lang, setLang, demoMode, setDemoMode, workerName, setWorkerName, edgeMode, setEdgeMode, employers, keepProof, setKeepProof, useWispr, setUseWispr } =
+  const { t, lang, setLang, workerName, setWorkerName, edgeMode, setEdgeMode, employers, keepProof, setKeepProof, useWispr, setUseWispr } =
     useApp();
   const [wispr, setWispr] = useState<'checking' | 'ok' | 'missing'>('checking');
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function Settings() {
   }, []);
   const [edge, setEdge] = useState<EdgeStatus>('idle');
 
-  // When the smart helper is on, show whether the local model can actually be reached.
+  // When the smart helper is on, show whether Sarvam 105B or the local model can be reached.
   useEffect(() => {
     if (!edgeMode) {
       setEdge('idle');
@@ -78,7 +78,10 @@ export default function Settings() {
     }
     let alive = true;
     setEdge('checking');
-    void checkEdge().then((ok) => alive && setEdge(ok ? 'ok' : 'down'));
+    void edgeInfo().then((info) => {
+      if (!alive) return;
+      setEdge(!info.ok ? 'down' : info.provider === 'sarvam' ? 'sarvam' : 'ok');
+    });
     return () => {
       alive = false;
     };
@@ -87,7 +90,7 @@ export default function Settings() {
   return (
     <div className="flex flex-col gap-4">
       <Card title={t.language}>
-        <p className="text-slate-600">{t.languageHelp}</p>
+        <p className="text-sm text-[#9BB08B]">{t.languageHelp}</p>
         <div className="grid grid-cols-1 gap-2">
           {LANGUAGES.map((l) => (
             <button
@@ -95,8 +98,10 @@ export default function Settings() {
               type="button"
               aria-pressed={lang === l.lang}
               onClick={() => setLang(l.lang)}
-              className={`h-14 rounded-xl px-6 text-xl font-semibold transition-colors ${
-                lang === l.lang ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-900 active:bg-slate-200'
+              className={`h-14 rounded-2xl px-6 text-xl font-bold transition ${
+                lang === l.lang
+                  ? 'bg-[#C9F43A] text-[#0B1307] shadow-md'
+                  : 'border border-[#2A401D] bg-[#0F180A] text-[#E5F0D8] hover:border-[#496D31]'
               }`}
             >
               {lang === l.lang && <span aria-hidden="true">✓ </span>}
@@ -112,17 +117,17 @@ export default function Settings() {
           onChange={(e) => setWorkerName(e.target.value)}
           aria-label={t.yourName}
           autoComplete="name"
-          className="h-14 rounded-xl border border-slate-300 px-4 text-xl"
+          className="h-14 rounded-2xl border border-[#344E24] bg-[#0F180A] px-4 text-xl font-semibold text-[#F3F7EC] focus:border-[#C9F43A] focus:outline-none"
         />
       </Card>
 
       <Card title={t.voiceEngineTitle}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="flex items-center gap-2 text-lg font-bold">
+            <p className="flex items-center gap-2 text-lg font-bold text-[#F3F7EC]">
               <WisprMark /> Wispr Flow
             </p>
-            <p role="status" className={wispr === 'ok' ? 'text-teal-800' : 'text-slate-600'}>
+            <p role="status" className={wispr === 'ok' ? 'text-sm font-semibold text-[#C9F43A]' : 'text-sm text-[#9BB08B]'}>
               {wispr === 'checking' ? t.edgeChecking : wispr === 'ok' ? t.wisprOk : t.wisprMissing}
             </p>
           </div>
@@ -132,7 +137,7 @@ export default function Settings() {
 
       <Card title={t.keepProofTitle}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-slate-600">{t.keepProofHelp}</p>
+          <p className="text-sm text-[#9BB08B]">{t.keepProofHelp}</p>
           <Switch checked={keepProof} onChange={setKeepProof} label={t.keepProofTitle} />
         </div>
       </Card>
@@ -144,30 +149,27 @@ export default function Settings() {
               <RateRow key={e.id} id={e.id} name={e.name} rate={e.dailyRate} />
             ))}
           </ul>
-          <p className="text-slate-600">{t.ratesHelp}</p>
+          <p className="text-sm text-[#9BB08B]">{t.ratesHelp}</p>
         </Card>
       )}
 
-      <Card title={t.demoModeLabel}>
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-slate-600">{t.demoHelp}</p>
-          <Switch checked={demoMode} onChange={(on) => void setDemoMode(on)} label={t.demoModeLabel} onColor="bg-amber-600" />
-        </div>
-      </Card>
-
       <Card title={t.edgeLabel}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-slate-600">{t.edgeHelp}</p>
+          <p className="text-sm text-[#9BB08B]">{t.edgeHelp}</p>
           <Switch checked={edgeMode} onChange={setEdgeMode} label={t.edgeLabel} />
         </div>
         {edge !== 'idle' && (
           <p
             role="status"
-            className={`rounded-xl px-3 py-2 ${
-              edge === 'ok' ? 'bg-teal-50 text-teal-900' : edge === 'down' ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-700'
+            className={`rounded-2xl px-3.5 py-2.5 text-sm font-semibold ${
+              edge === 'ok' || edge === 'sarvam'
+                ? 'border border-[#3D5E29] bg-[#1B2D12] text-[#D9F76E]'
+                : edge === 'down'
+                  ? 'border border-amber-500/40 bg-amber-950/60 text-amber-200'
+                  : 'bg-[#0F180A] text-[#B8C9AA]'
             }`}
           >
-            {edge === 'checking' ? t.edgeChecking : edge === 'ok' ? t.edgeOk : t.edgeDown}
+            {edge === 'checking' ? t.edgeChecking : edge === 'sarvam' ? t.edgeSarvamOk : edge === 'ok' ? t.edgeOk : t.edgeDown}
           </p>
         )}
       </Card>

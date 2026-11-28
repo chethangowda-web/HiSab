@@ -42,11 +42,6 @@ export interface UiText {
   save: string;
   cancel: string;
   deleteAsk: string;
-  demoModeLabel: string;
-  demoBanner: string;
-  demoNote: string;
-  playSample: string;
-  demoHelp: string;
   yourName: string;
   footerNote: string;
   invalidAmount: string;
@@ -71,7 +66,6 @@ export interface UiText {
   moreActions: string;
   welcomeTitle: string;
   welcomeText: string;
-  tryDemo: string;
   byEmployer: string;
   loading: string;
   hoursUnit: string;
@@ -101,6 +95,7 @@ export interface UiText {
   wisprMissing: string;
   wisprFallback: string;
   browserSpeech: string;
+  edgeSarvamOk: string;
 }
 
 const en: UiText = {
@@ -145,11 +140,6 @@ const en: UiText = {
   save: 'Save',
   cancel: 'Cancel',
   deleteAsk: 'Delete this entry?',
-  demoModeLabel: 'Demo mode',
-  demoBanner: 'DEMO MODE',
-  demoNote: 'Sample data, not real records.',
-  playSample: 'Play sample',
-  demoHelp: 'Shows sample data so you can try the app. Your real records are kept safe and hidden.',
   yourName: 'Your name',
   footerNote: 'Worker-recorded unless marked Employer-confirmed',
   invalidAmount: 'Enter an amount between 1 and 99,999.',
@@ -174,7 +164,6 @@ const en: UiText = {
   moreActions: 'Options',
   welcomeTitle: 'Welcome!',
   welcomeText: 'Say what work you did or what you were paid. BoliHisab keeps your hisab, so nobody can forget or dispute it.',
-  tryDemo: 'Try the demo',
   byEmployer: 'By employer',
   loading: 'Loading…',
   hoursUnit: 'h',
@@ -203,6 +192,7 @@ const en: UiText = {
   wisprMissing: 'Wispr Flow is not set up on this server, so the phone’s own speech recognition is used.',
   wisprFallback: 'Wispr Flow did not answer. Please say it again.',
   browserSpeech: 'Phone speech recognition',
+  edgeSarvamOk: 'Connected to Sarvam 105B.',
 };
 
 const hi: UiText = {
@@ -247,11 +237,6 @@ const hi: UiText = {
   save: 'सेव करें',
   cancel: 'रद्द करें',
   deleteAsk: 'यह एंट्री हटाएँ?',
-  demoModeLabel: 'डेमो मोड',
-  demoBanner: 'DEMO MODE',
-  demoNote: 'नमूना डेटा, असली रिकॉर्ड नहीं।',
-  playSample: 'नमूना चलाएँ',
-  demoHelp: 'ऐप आज़माने के लिए नमूना डेटा दिखाता है। आपके असली रिकॉर्ड सुरक्षित रहते हैं, बस छिपे रहते हैं।',
   yourName: 'आपका नाम',
   footerNote: 'मज़दूर ने दर्ज किया, जब तक "मालिक ने पुष्टि की" न लिखा हो',
   invalidAmount: '1 से 99,999 के बीच रकम लिखें।',
@@ -276,7 +261,6 @@ const hi: UiText = {
   moreActions: 'विकल्प',
   welcomeTitle: 'स्वागत है!',
   welcomeText: 'बोलकर बताइए कि आपने क्या काम किया या कितने पैसे मिले। बोलीहिसाब आपका हिसाब रखता है, ताकि कोई भूल या झगड़ा न हो।',
-  tryDemo: 'डेमो आज़माएँ',
   byEmployer: 'मालिक के हिसाब से',
   loading: 'लोड हो रहा है…',
   hoursUnit: 'घं',
@@ -305,6 +289,7 @@ const hi: UiText = {
   wisprMissing: 'इस सर्वर पर Wispr Flow सेट नहीं है, इसलिए फ़ोन की अपनी आवाज़ पहचान इस्तेमाल हो रही है।',
   wisprFallback: 'Wispr Flow से जवाब नहीं आया। कृपया फिर से बोलिए।',
   browserSpeech: 'फ़ोन की आवाज़ पहचान',
+  edgeSarvamOk: 'Sarvam 105B से जुड़ा है।',
 };
 
 const kn: UiText = {
@@ -349,11 +334,6 @@ const kn: UiText = {
   save: 'ಉಳಿಸಿ',
   cancel: 'ರದ್ದು',
   deleteAsk: 'ಈ ದಾಖಲೆಯನ್ನು ಅಳಿಸಬೇಕೇ?',
-  demoModeLabel: 'ಡೆಮೋ ಮೋಡ್',
-  demoBanner: 'DEMO MODE',
-  demoNote: 'ಮಾದರಿ ಡೇಟಾ, ನಿಜವಾದ ದಾಖಲೆಗಳಲ್ಲ.',
-  playSample: 'ಮಾದರಿ ಪ್ಲೇ ಮಾಡಿ',
-  demoHelp: 'ಆಪ್ ಪ್ರಯತ್ನಿಸಲು ಮಾದರಿ ಡೇಟಾ ತೋರಿಸುತ್ತದೆ. ನಿಮ್ಮ ನಿಜವಾದ ದಾಖಲೆಗಳು ಸುರಕ್ಷಿತವಾಗಿವೆ, ಮರೆಯಾಗಿವೆ ಅಷ್ಟೇ.',
   yourName: 'ನಿಮ್ಮ ಹೆಸರು',
   footerNote: 'ಕೆಲಸಗಾರರು ದಾಖಲಿಸಿದ್ದು, "ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದು" ಎಂದು ಗುರುತಿಸದ ಹೊರತು',
   invalidAmount: '1 ರಿಂದ 99,999 ರ ನಡುವೆ ಮೊತ್ತ ಬರೆಯಿರಿ.',
@@ -378,7 +358,6 @@ const kn: UiText = {
   moreActions: 'ಆಯ್ಕೆಗಳು',
   welcomeTitle: 'ಸ್ವಾಗತ!',
   welcomeText: 'ನೀವು ಮಾಡಿದ ಕೆಲಸ ಅಥವಾ ಸಿಕ್ಕ ಹಣವನ್ನು ಹೇಳಿ. ಬೋಲಿಹಿಸಾಬ್ ನಿಮ್ಮ ಲೆಕ್ಕ ಇಡುತ್ತದೆ, ಯಾರೂ ಮರೆಯುವುದಿಲ್ಲ, ವಾದ ಮಾಡುವುದಿಲ್ಲ.',
-  tryDemo: 'ಡೆಮೋ ಪ್ರಯತ್ನಿಸಿ',
   byEmployer: 'ಮಾಲೀಕರ ಪ್ರಕಾರ',
   loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
   hoursUnit: 'ಗಂ',
@@ -407,6 +386,7 @@ const kn: UiText = {
   wisprMissing: 'ಈ ಸರ್ವರ್‌ನಲ್ಲಿ Wispr Flow ಹೊಂದಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಫೋನ್‌ನ ಸ್ವಂತ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಬಳಸಲಾಗುತ್ತಿದೆ.',
   wisprFallback: 'Wispr Flow ಉತ್ತರಿಸಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಹೇಳಿ.',
   browserSpeech: 'ಫೋನ್‌ನ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ',
+  edgeSarvamOk: 'Sarvam 105B ಗೆ ಸಂಪರ್ಕವಾಗಿದೆ.',
 };
 
 const ALL: Record<Lang, UiText> = { 'en-IN': en, 'hi-IN': hi, 'kn-IN': kn };

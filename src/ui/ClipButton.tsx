@@ -53,10 +53,10 @@ export default function ClipButton({ clipId, blob, durationMs }: { clipId?: stri
       type="button"
       onClick={() => void toggle()}
       aria-label={playing ? t.stopProof : t.playProof}
-      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-slate-900 px-3 text-sm font-bold text-white active:bg-slate-700"
+      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#C9F43A] px-3.5 text-sm font-extrabold text-[#0B1307] shadow-sm transition active:scale-95"
     >
       <span aria-hidden="true">{playing ? '■' : '▶'}</span>
-      {duration !== undefined && <span>{mmss(duration)}</span>}
+      {duration !== undefined && <span className="tabular-nums">{mmss(duration)}</span>}
     </button>
   );
 }

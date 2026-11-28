@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, addEntry, deleteEntry, clearDemoData, saveClip, getClip } from '../src/db/db';
+import { db, addEntry, deleteEntry, saveClip, getClip } from '../src/db/db';
 import type { Entry } from '../src/domain/types';
 
 const entry = (p: Partial<Entry>): Entry => ({
@@ -37,14 +37,6 @@ describe('voice proof clips', () => {
     expect(await getClip(id)).toBeDefined();
     await deleteEntry('b');
     expect(await getClip(id)).toBeUndefined();
-  });
-
-  it('clearing demo data removes demo clips and keeps real ones', async () => {
-    const real = await saveClip(blob(), 1000);
-    const demo = await saveClip(blob(), 1000, { demo: true });
-    await clearDemoData();
-    expect(await getClip(real)).toBeDefined();
-    expect(await getClip(demo)).toBeUndefined();
   });
 
   it('existing entries without clips still work (database upgrade keeps old rows)', async () => {

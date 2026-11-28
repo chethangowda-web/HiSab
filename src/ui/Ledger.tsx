@@ -27,8 +27,8 @@ export default function Ledger() {
     <div className="flex flex-col gap-5">
       {groups.map((g) => (
         <section key={g.date}>
-          <h3 className="mb-2 px-1 text-sm font-bold uppercase tracking-wide text-slate-500">{friendlyDate(lang, g.date, today)}</h3>
-          <ul className="flex flex-col gap-2">
+          <h3 className="mb-2.5 px-1 text-xs font-bold uppercase tracking-wider text-[#9BB08B]">{friendlyDate(lang, g.date, today)}</h3>
+          <ul className="flex flex-col gap-2.5">
             {g.rows.map((e) => (
               <LedgerRow key={e.id} entry={e} employerName={name(e.employerId)} />
             ))}

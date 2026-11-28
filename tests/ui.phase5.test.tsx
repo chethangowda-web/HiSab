@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import App from '../src/App';
 import { db, listEntries } from '../src/db/db';
-import { seedDemoData } from '../src/db/seed';
+import { seedSampleLedger } from '../src/db/seed';
 
 const nav = navigator as unknown as Record<string, unknown>;
 
@@ -19,7 +19,7 @@ afterEach(() => {
 
 describe('trust labels, edit and delete', () => {
   const seed = async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^ledger$/i }));
     return screen.findAllByTestId('ledger-row');
@@ -83,76 +83,18 @@ describe('trust labels, edit and delete', () => {
   });
 });
 
-describe('demo mode', () => {
-  const turnOn = async () => {
+describe('demo mode removed', () => {
+  it('has no demo switch in Settings', async () => {
+    render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /^settings$/i }));
-    fireEvent.click(await screen.findByRole('switch', { name: /demo mode/i }));
-  };
-
-  it('is off by default: no banner', async () => {
-    render(<App />);
-    await screen.findByRole('button', { name: /^settings$/i });
-    expect(screen.queryByText('DEMO MODE')).toBeNull();
-  });
-
-  it('turning it on shows a clear label and sample data, and keeps real data hidden but safe', async () => {
-    await db.employers.put({ id: 'real', name: 'Real Employer' });
-    render(<App />);
-    await turnOn();
-    expect(await screen.findByText('DEMO MODE')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /^employers$/i }));
-    expect(await screen.findByText('Ramesh')).toBeInTheDocument();
-    expect(screen.queryByText('Real Employer')).toBeNull();
-    expect(await db.employers.get('real')).toBeDefined();
-  });
-
-  it('turning it off removes the demo data and brings real data back', async () => {
-    await db.employers.put({ id: 'real', name: 'Real Employer' });
-    render(<App />);
-    await turnOn();
-    await screen.findByText('DEMO MODE');
-    fireEvent.click(await screen.findByRole('switch', { name: /demo mode/i }));
-    await waitFor(() => expect(screen.queryByText('DEMO MODE')).toBeNull());
-    fireEvent.click(screen.getByRole('button', { name: /^employers$/i }));
-    expect(await screen.findByText('Real Employer')).toBeInTheDocument();
-    expect((await db.employers.toArray()).some((x) => x.demo)).toBe(false);
-  });
-
-  it('remembers demo mode after a reload', async () => {
-    await db.settings.put({ key: 'demoMode', value: true });
-    await seedDemoData();
-    render(<App />);
-    expect(await screen.findByText('DEMO MODE')).toBeInTheDocument();
-  });
-
-  it('Play sample runs a script through the real dialogue and saves a demo entry', async () => {
-    render(<App />);
-    await turnOn();
-    fireEvent.click(await screen.findByRole('button', { name: /^home$/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /play sample/i }));
-    await waitFor(
-      async () => expect((await listEntries()).filter((x) => x.demo && x.rawTranscript.includes('700'))).toHaveLength(1),
-      { timeout: 5000 },
-    );
-    expect(await screen.findByText(/Ramesh owes you/i, undefined, { timeout: 5000 })).toBeInTheDocument();
-  });
-
-  it('entries saved in demo mode are flagged demo, so they never mix with real data', async () => {
-    render(<App />);
-    await turnOn();
-    fireEvent.click(await screen.findByRole('button', { name: /^home$/i }));
-    fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'Ramesh ne 500 rupaye diye' } });
-    fireEvent.click(screen.getByRole('button', { name: /send/i }));
-    await screen.findByText(/Shall I save it/i);
-    fireEvent.click(screen.getByRole('button', { name: /^yes$/i }));
-    await waitFor(async () => expect((await listEntries()).some((x) => x.rawTranscript.includes('500 rupaye'))).toBe(true));
-    expect((await listEntries()).filter((x) => x.rawTranscript.includes('500 rupaye')).every((x) => x.demo)).toBe(true);
+    await screen.findByRole('switch', { name: /smart helper/i });
+    expect(screen.queryByRole('switch', { name: /demo mode/i })).toBeNull();
   });
 });
 
 describe('statement', () => {
   it('shows the employer statement with totals, and can print or share', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     await db.settings.put({ key: 'workerName', value: 'Chethan' });
     const print = vi.spyOn(window, 'print').mockImplementation(() => {});
     const share = vi.fn().mockResolvedValue(undefined);

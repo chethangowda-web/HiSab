@@ -65,6 +65,41 @@ export function buildMessages(req: ParseRequest): ChatMessage[] {
   return messages;
 }
 
+const MULTI_SYSTEM = `You split a compound spoken sentence by a daily-wage worker in India into separate wage/advance/payment entries. The sentence may be Kannada, Hindi, English or a mix, in native script or romanized. Reply with JSON only: {"entries":[...]}.
+
+Each entry in "entries" must have:
+- type: "work" | "overtime" | "advance" | "payment"
+- employerName: string or null (only a person's name actually said; roles like "sir"/"thekedar" are not names; if one employer applies to both clauses, repeat it)
+- amount: integer rupees actually said, or null
+- hours: number or null
+- dateHint: "yesterday" if that clause refers to yesterday ("kal"/"ninne"/"yesterday"), "today" if today ("aaj"/"ivattu"/"today"), otherwise null.
+
+Rules:
+1. Copy only amounts and names actually spoken. Never invent or calculate.
+2. Maximum 5 entries.`;
+
+/** Builds messages for splitting a multi-amount utterance into individual draft entries. */
+export function buildMultiMessages(req: ParseRequest): ChatMessage[] {
+  const known = req.knownEmployers.length ? `\nKnown employers (hint only): ${req.knownEmployers.join(', ')}.` : '';
+  return [
+    { role: 'system', content: MULTI_SYSTEM + known },
+    {
+      role: 'user',
+      content: 'Sentence: Aaj Mohan ke yahan 600 kaam kiya aur 150 advance liya',
+    },
+    {
+      role: 'assistant',
+      content: JSON.stringify({
+        entries: [
+          { type: 'work', employerName: 'Mohan', amount: 600, hours: null, dateHint: 'today' },
+          { type: 'advance', employerName: 'Mohan', amount: 150, hours: null, dateHint: 'today' },
+        ],
+      }),
+    },
+    { role: 'user', content: `Sentence: ${req.transcript}` },
+  ];
+}
+
 /** Returns an error message, or null if the request is acceptable. */
 export function validateRequest(body: unknown): string | null {
   if (typeof body !== 'object' || body === null) return 'body must be an object';

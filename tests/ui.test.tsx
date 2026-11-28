@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import App from '../src/App';
 import { db, listEntries } from '../src/db/db';
-import { seedDemoData } from '../src/db/seed';
+import { seedSampleLedger } from '../src/db/seed';
 
 const w = window as unknown as Record<string, unknown>;
 
@@ -49,13 +49,12 @@ afterEach(() => {
 });
 
 describe('Home', () => {
-  it('shows a mic of at least 96px and the outstanding balance from stored data', async () => {
+  it('shows the speak button and the outstanding balance from stored data', async () => {
     enableVoice();
-    await seedDemoData({ demo: false }); // 3 x 700 work - 1000 advance = 1100
+    await seedSampleLedger(); // 3 x 700 work - 1000 advance = 1100
     render(<App />);
     const mic = await screen.findByRole('button', { name: /tap to speak/i });
-    expect(mic.className).toMatch(/\bh-28\b/);
-    expect(mic.className).toMatch(/\bw-28\b/);
+    expect(mic).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('owed-total')).toHaveTextContent('₹1,100'));
   });
 
@@ -66,35 +65,28 @@ describe('Home', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/type/i);
   });
 
-  it('typed entry: read-back, confirm, then the balance updates', async () => {
+  it('typed entry: saves directly and updates the balance', async () => {
     render(<App />);
     fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'Aaj Ramesh ke site pe 700 rupaye kaam kiya' } });
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
-    const readBack = await screen.findByText(/Shall I save it/i);
-    expect(readBack).toHaveTextContent('Ramesh');
-    expect(readBack).toHaveTextContent('700');
-    expect(await listEntries()).toHaveLength(0); // nothing saved before confirming
-    fireEvent.click(screen.getByRole('button', { name: /^yes$/i }));
     await waitFor(async () => expect(await listEntries()).toHaveLength(1));
     await waitFor(() => expect(screen.getByTestId('owed-total')).toHaveTextContent('₹700'));
   });
 
-  it('typed entry: "no" saves nothing', async () => {
+  it('typed entry: Undo removes the saved entry', async () => {
     render(<App />);
     fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'Ramesh ne 500 rupaye diye' } });
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
-    await screen.findByText(/Shall I save it/i);
-    fireEvent.click(screen.getByRole('button', { name: /^no$/i }));
-    expect(await screen.findByText(/cancelled/i)).toBeInTheDocument();
-    expect(await listEntries()).toHaveLength(0);
+    const bar = await screen.findByTestId('saved-bar');
+    fireEvent.click(within(bar).getByRole('button', { name: /undo/i }));
+    await waitFor(async () => expect(await listEntries()).toHaveLength(0));
   });
 
-  it('voice entry: speak, hear read-back, say yes hands-free, entry is saved', async () => {
+  it('voice entry: speak once and entry is saved directly without asking yes/no', async () => {
     enableVoice();
-    MockRecognition.queue = ['I worked at Ramesh for 700 rupees today', 'yes'];
+    MockRecognition.queue = ['I worked at Ramesh for 700 rupees today'];
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /tap to speak/i }));
-    await screen.findByText(/Shall I save it/i);
     await waitFor(async () => expect(await listEntries()).toHaveLength(1), { timeout: 3000 });
     const [saved] = await listEntries();
     expect(saved).toMatchObject({ type: 'work', amount: 700, source: 'worker' });
@@ -120,7 +112,7 @@ describe('Home', () => {
   });
 
   it('answers a balance question by text and voice phrase', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     fireEvent.change(await screen.findByRole('textbox'), { target: { value: 'How much does Ramesh still owe me?' } });
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
@@ -132,7 +124,7 @@ describe('navigation and lists', () => {
   const goto = async (name: RegExp) => fireEvent.click(await screen.findByRole('button', { name }));
 
   it('Ledger lists entries newest first with a worker-recorded badge', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     await goto(/^ledger$/i);
     const rows = await screen.findAllByTestId('ledger-row');
@@ -149,7 +141,7 @@ describe('navigation and lists', () => {
   });
 
   it('Employers shows each employer with days, earned and outstanding', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     await goto(/^employers$/i);
     const card = await screen.findByTestId('employer-card');
@@ -160,7 +152,7 @@ describe('navigation and lists', () => {
   });
 
   it('Payments lists advances and payments with totals', async () => {
-    await seedDemoData({ demo: false });
+    await seedSampleLedger();
     render(<App />);
     await goto(/^payments$/i);
     const rows = await screen.findAllByTestId('payment-row');

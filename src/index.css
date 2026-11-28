@@ -1,16 +1,61 @@
 @import "tailwindcss";
 
-html { font-size: 18px; }
-body { margin: 0; background: #f8fafc; color: #0f172a; font-family: system-ui, sans-serif; }
+html { font-size: 16px; }
+body {
+  margin: 0;
+  background-color: #0b1307;
+  color: #f3f7ec;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', 'Noto Sans Kannada', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
 
-@keyframes hisab-bar { 0%, 100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }
-.wave-bar { animation: hisab-bar 1s ease-in-out infinite; transform-origin: center; }
+/* Fintech Olive + Acid Lime Surfaces */
+.fintech-card {
+  background-color: #15200e;
+  border: 1px solid #293e1d;
+  border-radius: 24px;
+  box-shadow: 0 14px 36px -14px rgba(0, 0, 0, 0.65);
+}
 
-/* "Save as PDF" prints only the wage statement. */
+.fintech-row {
+  background-color: #16220f;
+  border: 1px solid #263a1a;
+  border-radius: 18px;
+}
+
+.lime-bowl {
+  background: linear-gradient(165deg, #b5e922 0%, #d9f76e 100%);
+  color: #0b1307;
+}
+
+.lime-inner {
+  background: linear-gradient(180deg, #e7fc95 0%, #d4f462 100%);
+  border: 1px solid rgba(11, 19, 7, 0.1);
+  border-radius: 22px;
+  color: #0b1307;
+}
+
+@keyframes hisab-bar { 0%, 100% { transform: scaleY(.32); opacity: 0.65; } 50% { transform: scaleY(1); opacity: 1; } }
+.wave-bar { animation: hisab-bar 0.95s ease-in-out infinite; transform-origin: center; }
+
+@keyframes hisab-aura {
+  0% { transform: scale(0.96); opacity: 0.48; }
+  75% { transform: scale(1.28); opacity: 0; }
+  100% { transform: scale(1.28); opacity: 0; }
+}
+.aura-ring { animation: hisab-aura 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+
+@keyframes hisab-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-enter { animation: hisab-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* "Save as PDF" prints only the wage statement cleanly on white paper. */
 @media print {
-  body { background: #fff; }
+  body { background: #fff !important; background-image: none !important; color: #000 !important; }
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; box-shadow: none !important; border: none !important; }
   .no-print { display: none !important; }
 }

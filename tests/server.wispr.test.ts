@@ -33,8 +33,8 @@ describe('POST /api/transcribe', () => {
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer fl-secret');
     const sent = JSON.parse(init.body as string);
     expect(sent.audio).toBe('UklGRg==');
-    expect(sent.language).toEqual(['hi']);
-    expect(sent.context.dictionary_context).toEqual(['Ramesh', 'Suresh']);
+    expect(sent.language).toEqual(['hi', 'en']);
+    expect(sent.context.dictionary_context).toEqual(expect.arrayContaining(['Ramesh', 'Suresh', 'dihadi', 'kharchi', 'hajri']));
   });
 
   it.each([
@@ -45,13 +45,13 @@ describe('POST /api/transcribe', () => {
     expect(await (await post(base, body)).json()).toEqual({ text });
   });
 
-  it('maps app languages to Wispr codes', async () => {
+  it('maps app languages to bilingual Wispr codes for code-switching', async () => {
     const up = wisprSays({ text: 'x' });
     const base = await start(up as unknown as typeof fetch, 'k');
     await post(base, { ...body, lang: 'kn-IN' });
     await post(base, { ...body, lang: 'en-IN' });
     const langs = (up.mock.calls as unknown as [string, RequestInit][]).map(([, i]) => JSON.parse(i.body as string).language);
-    expect(langs).toEqual([['kn'], ['en']]);
+    expect(langs).toEqual([['kn', 'en'], ['en']]);
   });
 
   it('503 when no key is configured, without calling Wispr', async () => {

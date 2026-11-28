@@ -83,6 +83,24 @@ describe('speech input', () => {
     MockRecognition.script = (r) => r.onresult?.({ results: [[{ transcript: 'hello', confidence: 0 }]] });
     expect((await listen('en-IN')).confidence).toBeGreaterThanOrEqual(0.6);
   });
+
+  it('keeps the interim transcript when recognition ends early before isFinal', async () => {
+    w.webkitSpeechRecognition = MockRecognition;
+    MockRecognition.script = (r) => {
+      const interim = Object.assign([{ transcript: 'Ramesh 700', confidence: 0 }], { isFinal: false });
+      r.onresult?.({ results: [interim] });
+      r.onend?.();
+    };
+    const out = await listen('hi-IN', { onInterim: () => {} });
+    expect(out.text).toBe('Ramesh 700');
+    expect(out.confidence).toBeGreaterThanOrEqual(0.6);
+  });
+
+  it('rejects audio_busy on audio-capture so caller can retry without recorder lock', async () => {
+    w.webkitSpeechRecognition = MockRecognition;
+    MockRecognition.script = (r) => r.onerror?.({ error: 'audio-capture' });
+    await expect(listen('en-IN')).rejects.toBe('audio_busy');
+  });
 });
 
 class MockUtterance {
@@ -115,10 +133,11 @@ describe('speech output', () => {
     expect(spoken[0].lang).toBe('hi-IN');
   });
 
-  it('falls back to an en-IN voice when the language has none', async () => {
+  it('does not force an English voice when the language has none', async () => {
     const spoken = mockSynth(['en-IN', 'en-US']);
     await speak('hello', 'kn-IN');
-    expect(spoken[0].voice?.lang).toBe('en-IN');
+    expect(spoken[0].voice?.lang).toBeUndefined();
+    expect(spoken[0].lang).toBe('kn-IN');
   });
 
   it('still speaks (letting the browser choose) when no voice matches at all', async () => {

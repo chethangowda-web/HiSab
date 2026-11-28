@@ -1,4 +1,5 @@
 import type { Draft, EntryType, Intent, QueryKind } from '../domain/types';
+import { lastNDays } from '../domain/dates';
 import { allNumbers, moneyAmounts, resolveDate, tokenize } from './normalize';
 import { display, isNameToken, missingFields, parseUtterance, type ParseContext } from './ruleParser';
 
@@ -15,7 +16,7 @@ export interface EdgeOptions {
   timeoutMs?: number;
 }
 
-const DEFAULT_TIMEOUT_MS = 4000;
+const DEFAULT_TIMEOUT_MS = 12000;
 const KINDS = ['record', 'query', 'confirm', 'deny', 'unknown'] as const;
 const TYPES: EntryType[] = ['work', 'overtime', 'advance', 'payment'];
 const QS: QueryKind[] = ['owed', 'earned', 'advances', 'days'];
@@ -112,7 +113,7 @@ function merge(rule: Intent, raw: RawParse, text: string, ctx: ParseContext): In
     case 'confirm':
     case 'deny':
       // Only for short replies; a long sentence is never a bare yes/no.
-      return rule.kind === 'unknown' && tokenize(text).length <= 4 ? { kind: raw.kind } : null;
+      return rule.kind === 'unknown' && tokenize(text).length <= 8 ? { kind: raw.kind } : null;
     default:
       return null;
   }
@@ -149,14 +150,78 @@ export async function parseWithFallback(text: string, ctx: ParseContext, opts: E
   return merge(rule, raw, text, ctx) ?? rule;
 }
 
-/** True if the proxy is running and can reach the local model. */
-export async function checkEdge(opts: { fetch?: typeof fetch } = {}): Promise<boolean> {
+export interface EdgeHealth {
+  ok: boolean;
+  provider?: string;
+  model?: string;
+}
+
+/** Returns health details of the configured LLM proxy (Sarvam 105B or local Ollama). */
+export async function edgeInfo(opts: { fetch?: typeof fetch } = {}): Promise<EdgeHealth> {
   try {
     const res = await (opts.fetch ?? fetch)('/api/health');
-    if (!res.ok) return false;
-    const data = (await res.json()) as { ok?: unknown };
-    return data.ok === true;
+    if (!res.ok) return { ok: false };
+    const data = (await res.json()) as { ok?: unknown; provider?: unknown; model?: unknown };
+    return {
+      ok: data.ok === true,
+      provider: typeof data.provider === 'string' ? data.provider : undefined,
+      model: typeof data.model === 'string' ? data.model : undefined,
+    };
   } catch {
-    return false;
+    return { ok: false };
+  }
+}
+
+/** True if the proxy is running and can reach the model. */
+export async function checkEdge(opts: { fetch?: typeof fetch } = {}): Promise<boolean> {
+  return (await edgeInfo(opts)).ok;
+}
+
+/**
+ * Splits a multi-amount utterance (e.g. "700 kaam kiya aur 200 kharchi liya") via /api/parse-multi
+ * and applies the same strict guardrails (every amount and employer must appear in what was said).
+ */
+export async function parseMultiUtterance(text: string, ctx: ParseContext, opts: EdgeOptions): Promise<Draft[]> {
+  if (!opts.enabled || new Set(moneyAmounts(text)).size < 2) return [];
+  const f = opts.fetch ?? fetch;
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  try {
+    const res = await f('/api/parse-multi', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ transcript: text, lang: ctx.lang, knownEmployers: ctx.employers, today: ctx.today }),
+      signal: ac.signal,
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { entries?: unknown };
+    if (!Array.isArray(data?.entries)) return [];
+    const yesterday = lastNDays(ctx.today, 2)[0];
+    const fallbackDate = resolveDate(text, ctx.today) ?? ctx.today;
+    const drafts: Draft[] = [];
+    for (const item of data.entries.slice(0, 5)) {
+      if (typeof item !== 'object' || item === null) continue;
+      const o = item as Record<string, unknown>;
+      const type = TYPES.includes(o.type as EntryType) ? (o.type as EntryType) : undefined;
+      const amount = guardAmount(typeof o.amount === 'number' ? o.amount : null, text);
+      const hours = guardHours(typeof o.hours === 'number' ? o.hours : null, text);
+      const employerName = guardEmployer(typeof o.employerName === 'string' ? o.employerName : null, text, ctx.employers);
+      if (!type && amount === undefined) continue;
+      const date = o.dateHint === 'yesterday' ? yesterday : o.dateHint === 'today' ? ctx.today : fallbackDate;
+      drafts.push({
+        rawTranscript: text,
+        lang: ctx.lang,
+        date,
+        ...(type ? { type } : {}),
+        ...(amount !== undefined ? { amount, amountFrom: 'said' as const } : {}),
+        ...(hours !== undefined ? { hours } : {}),
+        ...(employerName ? { employerName } : {}),
+      });
+    }
+    return drafts;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
   }
 }

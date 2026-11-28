@@ -5,6 +5,10 @@ export interface ModelConfig {
   url: string;
   /** Model tag, e.g. the Gemma or Qwen tag you pulled. */
   model: string;
+  /** Optional Sarvam AI API key; when set, /api/parse uses Sarvam 105B instead of Ollama. */
+  sarvamKey?: string;
+  /** Optional Sarvam model name (defaults to sarvam-105b). */
+  sarvamModel?: string;
 }
 
 /** Asks the local model to parse one sentence. Throws if the server or the answer is unusable. */

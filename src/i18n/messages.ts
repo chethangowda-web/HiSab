@@ -101,7 +101,7 @@ const en: Messages = {
   fallbackHint: "I'm having trouble hearing you. Please type it instead.",
   saved: 'Saved.',
   discarded: 'Okay, cancelled. Please say the entry again.',
-  notUnderstood: "Sorry, I didn't understand. Try: I worked at Ramesh for 700 rupees.",
+  notUnderstood: "Sorry, I didn't understand. Please say it again.",
   unclearAmount: "I couldn't catch the amount. How many rupees?",
   answer: (r, period) => {
     const emp = r.employerName;
@@ -139,7 +139,7 @@ const hi: Messages = {
   fallbackHint: 'मुझे सुनने में दिक्कत हो रही है। कृपया टाइप करें।',
   saved: 'सेव हो गया।',
   discarded: 'ठीक है, रद्द किया। कृपया फिर से बताइए।',
-  notUnderstood: 'समझ नहीं आया। ऐसे बोलिए: मैंने रमेश के यहाँ 700 रुपये काम किया।',
+  notUnderstood: 'समझ नहीं आया। कृपया फिर से बोलिए।',
   unclearAmount: 'रकम समझ नहीं आई। कितने रुपये?',
   answer: (r, period) => {
     const emp = r.employerName;
@@ -177,7 +177,7 @@ const kn: Messages = {
   fallbackHint: 'ನನಗೆ ಕೇಳಿಸುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.',
   saved: 'ಉಳಿಸಲಾಗಿದೆ.',
   discarded: 'ಸರಿ, ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಹೇಳಿ.',
-  notUnderstood: 'ಅರ್ಥವಾಗಲಿಲ್ಲ. ಹೀಗೆ ಹೇಳಿ: ನಾನು ರಮೇಶ್ ಅವರ ಬಳಿ 700 ರೂಪಾಯಿ ಕೆಲಸ ಮಾಡಿದೆ.',
+  notUnderstood: 'ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಹೇಳಿ.',
   unclearAmount: 'ಮೊತ್ತ ಅರ್ಥವಾಗಲಿಲ್ಲ. ಎಷ್ಟು ರೂಪಾಯಿ?',
   answer: (r, period) => {
     const emp = r.employerName;

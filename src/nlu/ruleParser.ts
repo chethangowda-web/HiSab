@@ -165,7 +165,7 @@ export function parseUtterance(text: string, ctx: ParseContext): Intent {
   const s = tokens.join(' ');
 
   if (NO_WORDS.has(tokens[0])) return { kind: 'deny' };
-  if (YES_WORDS.has(tokens[0]) && tokens.length <= 4) return { kind: 'confirm' };
+  if (YES_WORDS.has(tokens[0]) && tokens.length <= 8) return { kind: 'confirm' };
   if (tokens.length <= 4 && /repeat|dobara|phir se|again/.test(s)) return { kind: 'repeat' };
 
   const cmd = commandOf(s, text);

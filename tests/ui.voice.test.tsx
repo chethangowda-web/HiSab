@@ -91,7 +91,6 @@ const finishSpeaking = async () => {
   h.session = null;
   s.stop();
 };
-const yes = async () => fireEvent.click(within(await screen.findByTestId('confirm-card')).getByRole('button', { name: /^yes$/i }));
 
 describe('Wispr Flow as the speech engine', () => {
   it('records, shows the Wispr Flow listening screen, transcribes, and attaches the voice proof', async () => {
@@ -102,11 +101,8 @@ describe('Wispr Flow as the speech engine', () => {
     const listening = await screen.findByTestId('listening');
     expect(listening).toHaveTextContent(/wispr flow/i);
     await finishSpeaking();
-    const card = await screen.findByTestId('confirm-card');
-    expect(card).toHaveTextContent('₹500');
-    expect(within(card).getByTestId('clip-preview')).toBeInTheDocument();
-    await yes();
     await waitFor(async () => expect(await listEntries()).toHaveLength(1));
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('Ramesh ₹500');
     const [saved] = await listEntries();
     expect(saved.clipId).toBeDefined();
     expect((await getClip(saved.clipId!))!.durationMs).toBe(1000); // take 1
@@ -118,7 +114,6 @@ describe('Wispr Flow as the speech engine', () => {
     render(<App />);
     await tapMic();
     await finishSpeaking();
-    await yes();
     await waitFor(async () => expect(await listEntries()).toHaveLength(3));
     const ids = new Set((await listEntries()).map((e) => e.clipId));
     expect(ids.size).toBe(1);
@@ -132,7 +127,6 @@ describe('Wispr Flow as the speech engine', () => {
     await tapMic();
     await finishSpeaking(); // take 1: the sentence
     await finishSpeaking(); // take 2: "650" (hands-free answer)
-    await yes();
     await waitFor(async () => expect(await listEntries()).toHaveLength(1));
     const [saved] = await listEntries();
     expect(saved.amount).toBe(650);
@@ -145,7 +139,7 @@ describe('Wispr Flow as the speech engine', () => {
     render(<App />);
     await tapMic();
     await finishSpeaking();
-    expect(await screen.findByTestId('confirm-card')).toHaveTextContent('₹300');
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('₹300');
     expect(h.transcribeCalls).toBe(1); // tried Wispr once, then phone speech
     expect(MockRecognition.starts).toBeGreaterThanOrEqual(1);
   });
@@ -155,7 +149,7 @@ describe('Wispr Flow as the speech engine', () => {
     MockRecognition.queue = ['Ramesh ne 300 rupaye diye'];
     render(<App />);
     await tapMic();
-    expect(await screen.findByTestId('confirm-card')).toHaveTextContent('₹300');
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('₹300');
     expect(MockRecognition.starts).toBeGreaterThanOrEqual(1);
     expect(h.transcribeCalls).toBe(0);
   });
@@ -177,8 +171,6 @@ describe('Wispr Flow as the speech engine', () => {
     render(<App />);
     await tapMic();
     await finishSpeaking();
-    expect(within(await screen.findByTestId('confirm-card')).queryByTestId('clip-preview')).toBeNull();
-    await yes();
     await waitFor(async () => expect(await listEntries()).toHaveLength(1));
     expect((await listEntries())[0].clipId).toBeUndefined();
     expect(await db.clips.count()).toBe(0);
@@ -189,7 +181,7 @@ describe('Wispr Flow as the speech engine', () => {
     MockRecognition.queue = ['Ramesh ne 300 rupaye diye'];
     render(<App />);
     await tapMic();
-    expect(await screen.findByTestId('confirm-card')).toHaveTextContent('₹300');
+    expect(await screen.findByTestId('saved-bar')).toHaveTextContent('₹300');
     expect(h.transcribeCalls).toBe(0); // Wispr Flow never used
   });
 });

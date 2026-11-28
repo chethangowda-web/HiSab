@@ -10,7 +10,7 @@ unpaid balances get forgotten or disputed. BoliHisab lets a worker simply *say* 
 Built for **Build for Bharat, Round 2** (theme: *Livelihoods and small business*).
 
 > **Live demo:** https://chethangowda-web.github.io/HiSab/ (open in **Chrome** for voice)
-> No sign-up. Tap **Try the demo** on the first screen.
+> No sign-up.
 
 ## What it does
 
@@ -36,7 +36,7 @@ Built for **Build for Bharat, Round 2** (theme: *Livelihoods and small business*
   recognition is used automatically.
 
 Also: ledger grouped by day, employers, advances and payments, employer-confirmed marks
-("Worker-recorded" vs "Employer-confirmed"), edit and delete, and a labelled **Demo mode**.
+("Worker-recorded" vs "Employer-confirmed"), edit and delete.
 
 ### Safety rules the app enforces
 
@@ -44,7 +44,6 @@ Also: ledger grouped by day, employers, advances and payments, employer-confirme
 - Asks again when speech is unclear or a field is missing, instead of guessing.
 - A sentence with **two different amounts** is refused, never merged into one record.
 - An amount must actually appear in what was said, or be the employer's known rate (clearly labelled).
-- Real records and demo data are kept apart; turning demo mode off never touches real records.
 
 ## Run it
 
@@ -78,7 +77,7 @@ phone's speech recognition for that sentence.
 
 ### Try it without a microphone
 
-1. Open the app and tap **▶ Try the demo** (or Settings → Demo mode).
+1. Open the app and tap the mic.
 2. Tap **▶ Play sample**. It runs a scripted sentence through the *real* parser, dialogue and ledger:
    record → confirm → ask the balance, in the current language.
 3. Switch language from the header (ಕ / हि / EN) and play it again.
@@ -111,7 +110,7 @@ src/
   voice/     speech in/out adapters, the dialogue state machine
   nlu/       number & date normalizer (Kannada/Hindi/English), rule parser, validator, optional LLM client
   domain/    ledger maths (integer rupees), queries, statements, edit rules
-  db/        IndexedDB, demo data
+  db/        IndexedDB
   ui/        screens and components
   i18n/      spoken and written text in all three languages
 server/      optional proxy to a local model

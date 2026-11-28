@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import type { Employer, Entry } from '../src/domain/types';
 import { answerQuery } from '../src/domain/queries';
 import { db, addEntry, listEntries, listEmployers, findOrCreateEmployer } from '../src/db/db';
-import { seedDemoData } from '../src/db/seed';
+import { seedSampleLedger } from '../src/db/seed';
 
 const emp = (id: string, name: string): Employer => ({ id, name });
 const ent = (p: Partial<Entry>): Entry => ({
@@ -78,8 +78,8 @@ describe('db', () => {
     expect(b.id).toBe(a.id);
     expect(await listEmployers()).toHaveLength(1);
   });
-  it('seedDemoData creates Ramesh with 3 work days and 1 advance', async () => {
-    await seedDemoData();
+  it('seedSampleLedger creates Ramesh with 3 work days and 1 advance', async () => {
+    await seedSampleLedger();
     const es = await listEntries();
     expect(es.filter((x) => x.type === 'work')).toHaveLength(3);
     expect(es.filter((x) => x.type === 'advance')).toHaveLength(1);
