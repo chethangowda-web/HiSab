@@ -2,6 +2,7 @@ import { daysWorked, totals } from '../domain/ledger';
 import { inr } from '../i18n/ui';
 import { useApp } from './AppContext';
 import Avatar from './Avatar';
+import CallEmployer from './CallEmployer';
 import EmptyState from './EmptyState';
 
 export default function Employers({ onStatement }: { onStatement: (employerId: string) => void }) {
@@ -44,6 +45,7 @@ export default function Employers({ onStatement }: { onStatement: (employerId: s
             <button type="button" onClick={() => onStatement(emp.id)} className="btn btn-primary mt-3.5 h-12 w-full">
               📄 {t.statementBtn}
             </button>
+            <CallEmployer employer={emp} />
           </li>
         );
       })}

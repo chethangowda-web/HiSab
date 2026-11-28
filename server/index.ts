@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { askModel, modelReachable, type ModelConfig } from './ollama';
 import { validateRequest, type ParseRequest } from './prompt';
 import { askSarvam, askSarvamMulti, DEFAULT_SARVAM_MODEL, transcribeWithSarvam, ttsWithSarvam } from './sarvam';
+import { answerXml, IN_MOBILE, placeCall, RateLimiter, validateCall, verifySignature, type CallRequest, type VobizConfig } from './vobiz';
 import { transcribeWithWispr, validateTranscribe, type TranscribeRequest } from './wispr';
 
 const MAX_BODY_BYTES = 20_000;
@@ -25,6 +26,8 @@ const MIME: Record<string, string> = {
 export interface VoiceConfig {
   /** Wispr Flow API key. Optional: without it /api/transcribe answers 503 and the app uses browser speech. */
   wisprKey?: string;
+  /** Vobiz telephony; when set, workers can call employers (bridge call). */
+  vobiz?: VobizConfig;
   /** Optional directory (e.g. `dist`) to serve static frontend assets in production. */
   staticDir?: string;
 }
@@ -56,12 +59,21 @@ function readBody(req: IncomingMessage, limit = MAX_BODY_BYTES): Promise<string 
  * It also forwards recordings to Wispr Flow, keeping the API key on the server.
  */
 export function createApp(cfg: ModelConfig, fetchImpl: typeof fetch = fetch, voice: VoiceConfig = {}): Server {
+  const callPerIp = new RateLimiter(5, 3_600_000);
+  const callGlobal = new RateLimiter(40, 3_600_000);
+  /** Behind a proxy the last X-Forwarded-For entry is the one the proxy itself added. */
+  const clientKey = (req: IncomingMessage) => {
+    const xff = String(req.headers['x-forwarded-for'] ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+    return xff.length ? xff[xff.length - 1] : (req.socket.remoteAddress ?? 'unknown');
+  };
   return createServer(async (req, res) => {
     const path = (req.url ?? '').split('?')[0];
 
     if (path === '/api/voice-health') {
       if (req.method !== 'GET') return send(res, 405, { error: 'use GET' });
-      return send(res, 200, cfg.sarvamKey ? { wispr: Boolean(voice.wisprKey), sarvamStt: true, sarvamTts: true } : { wispr: Boolean(voice.wisprKey) });
+      const health: Record<string, boolean> = cfg.sarvamKey ? { wispr: Boolean(voice.wisprKey), sarvamStt: true, sarvamTts: true } : { wispr: Boolean(voice.wisprKey) };
+      if (voice.vobiz) health.call = true;
+      return send(res, 200, health);
     }
 
     if (path === '/api/transcribe') {
@@ -109,6 +121,42 @@ export function createApp(cfg: ModelConfig, fetchImpl: typeof fetch = fetch, voi
         return send(res, 200, { audio: await ttsWithSarvam(cfg.sarvamKey, text, body.lang, fetchImpl) });
       } catch {
         return send(res, 502, { error: 'Speech synthesis failed' });
+      }
+    }
+
+    if (path === '/api/call/answer') {
+      if (req.method !== 'GET' && req.method !== 'POST') return send(res, 405, { error: 'use GET or POST' });
+      if (!voice.vobiz) return send(res, 503, { error: 'Calling is not configured' });
+      const q = new URL(req.url ?? '', 'http://x').searchParams;
+      const to = q.get('to') ?? '';
+      const name = q.get('name') ?? '';
+      if (!IN_MOBILE.test(to) || name.length < 1 || name.length > 60 || !verifySignature(voice.vobiz, to, name, q.get('sig') ?? '')) {
+        return send(res, 403, { error: 'forbidden' });
+      }
+      res.writeHead(200, { 'content-type': 'text/xml; charset=utf-8' });
+      res.end(answerXml(voice.vobiz, to, name));
+      return;
+    }
+
+    if (path === '/api/call') {
+      if (req.method !== 'POST') return send(res, 405, { error: 'use POST' });
+      if (!voice.vobiz) return send(res, 503, { error: 'Calling is not configured' });
+      const raw = await readBody(req);
+      if (raw === null) return send(res, 413, { error: 'request too large' });
+      let body: unknown;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        return send(res, 400, { error: 'invalid JSON' });
+      }
+      const problem = validateCall(body);
+      if (problem) return send(res, 400, { error: problem });
+      if (!callPerIp.allow(clientKey(req)) || !callGlobal.allow('all')) return send(res, 429, { error: 'Too many calls, try again later' });
+      try {
+        await placeCall(voice.vobiz, body as CallRequest, fetchImpl);
+        return send(res, 200, { ok: true });
+      } catch {
+        return send(res, 502, { error: 'Could not start the call' });
       }
     }
 
@@ -193,6 +241,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const voice: VoiceConfig = {
     wisprKey: process.env.WISPR_API_KEY || undefined,
     staticDir: existsSync(join(distDir, 'index.html')) ? distDir : undefined,
+    vobiz:
+      process.env.VOBIZ_AUTH_ID && process.env.VOBIZ_AUTH_TOKEN && process.env.VOBIZ_FROM && process.env.PUBLIC_BASE_URL
+        ? {
+            authId: process.env.VOBIZ_AUTH_ID,
+            authToken: process.env.VOBIZ_AUTH_TOKEN,
+            from: process.env.VOBIZ_FROM,
+            publicBaseUrl: process.env.PUBLIC_BASE_URL,
+          }
+        : undefined,
   };
   createApp(cfg, fetch, voice).listen(port, host, () => {
     console.log(`BoliHisab server on http://${host}:${port}`);
@@ -202,6 +259,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else {
       console.log(`  Local model (optional): ${cfg.url} (model: ${cfg.model})`);
     }
+    console.log(`  Calling (Vobiz): ${voice.vobiz ? 'configured' : 'not configured (set VOBIZ_AUTH_ID, VOBIZ_AUTH_TOKEN, VOBIZ_FROM, PUBLIC_BASE_URL)'}`);
     if (voice.staticDir) console.log(`  Static frontend: ${voice.staticDir}`);
   });
 }

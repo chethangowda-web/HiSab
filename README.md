@@ -82,6 +82,23 @@ phone's speech recognition for that sentence.
    record → confirm → ask the balance, in the current language.
 3. Switch language from the header (ಕ / हि / EN) and play it again.
 
+## Call the employer (Vobiz)
+
+The Employers tab can connect the worker to an employer by phone. The worker taps **Call**, their own phone
+rings, and when they pick up they are bridged to the employer's number. Set these on the server:
+
+| Variable | Meaning |
+|---|---|
+| `VOBIZ_AUTH_ID` | Auth ID from the Vobiz console |
+| `VOBIZ_AUTH_TOKEN` | Auth token from the Vobiz console (also signs the answer URL) |
+| `VOBIZ_FROM` | A Vobiz number to call from, in E.164 (`+91...`) |
+| `PUBLIC_BASE_URL` | Public https URL of this server, so Vobiz can fetch the call instructions |
+
+Without all four the Call button is hidden. The worker enters their own number in **Settings** and the employer's
+number on the employer's card. Only Indian mobile numbers are accepted. The Vobiz number must be allowed to call
+Indian mobiles; trial accounts may only call numbers you have verified. Calls are rate limited (5 per hour per
+client, 40 per hour in total) and the instructions URL is HMAC-signed, so the server cannot be used as an open dialer.
+
 ## Optional: local AI helper ("edge mode")
 
 The app understands speech with a built-in, rule-based parser that never invents an amount. For

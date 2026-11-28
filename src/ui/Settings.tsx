@@ -58,7 +58,7 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
 }
 
 export default function Settings() {
-  const { t, lang, setLang, workerName, setWorkerName, edgeMode, setEdgeMode, employers, keepProof, setKeepProof, useWispr, setUseWispr } =
+  const { t, lang, setLang, workerName, setWorkerName, workerPhone, setWorkerPhone, edgeMode, setEdgeMode, employers, keepProof, setKeepProof, useWispr, setUseWispr } =
     useApp();
   const [wispr, setWispr] = useState<'checking' | 'ok' | 'missing'>('checking');
   useEffect(() => {
@@ -115,6 +115,17 @@ export default function Settings() {
           onChange={(e) => setWorkerName(e.target.value)}
           aria-label={t.yourName}
           autoComplete="name"
+          className="input h-14 text-xl font-semibold"
+        />
+      </Card>
+
+      <Card title={t.yourPhone}>
+        <input
+          value={workerPhone}
+          onChange={(e) => setWorkerPhone(e.target.value)}
+          aria-label={t.yourPhone}
+          inputMode="tel"
+          autoComplete="tel"
           className="input h-14 text-xl font-semibold"
         />
       </Card>

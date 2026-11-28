@@ -23,6 +23,8 @@ export interface Employer {
   name: string;
   dailyRate?: number;
   overtimeRate?: number;
+  /** Phone number in E.164 (+91…), used for the "Call" button. */
+  phone?: string;
 }
 
 export type Draft = Partial<Entry> & {

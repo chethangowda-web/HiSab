@@ -16,6 +16,9 @@ interface AppState {
   ready: boolean;
   workerName: string;
   setWorkerName(name: string): void;
+  /** The worker's own phone number (E.164), used to bridge calls to employers. */
+  workerPhone: string;
+  setWorkerPhone(phone: string): void;
   /** Optional local AI model helps with sentences the rules cannot understand. */
   edgeMode: boolean;
   setEdgeMode(on: boolean): void;
@@ -43,6 +46,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [allEntries, setAllEntries] = useState<Entry[]>([]);
   const [allEmployers, setAllEmployers] = useState<Employer[]>([]);
   const [workerName, setWorkerNameState] = useState('');
+  const [workerPhone, setWorkerPhoneState] = useState('');
   const [ready, setReady] = useState(false);
   const [edgeMode, setEdgeModeState] = useState(false);
   const [tab, setTabState] = useState<Tab>('home');
@@ -70,15 +74,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let alive = true;
     (async () => {
       try {
-        const [l, n, g] = await Promise.all([
+        const [l, n, wp, g] = await Promise.all([
           db.settings.get('language'),
           db.settings.get('workerName'),
+          db.settings.get('workerPhone'),
           db.settings.get('edgeMode'),
         ]);
         const [kp, uw] = await Promise.all([db.settings.get('keepProof'), db.settings.get('useWispr')]);
         if (!alive) return;
         if (l && isLang(l.value)) setLangState(l.value);
         if (n && typeof n.value === 'string') setWorkerNameState(n.value);
+        if (wp && typeof wp.value === 'string') setWorkerPhoneState(wp.value);
         if (g?.value === true) setEdgeModeState(true);
         if (kp?.value === false) setKeepProofState(false);
         if (uw?.value === false) setUseWisprState(false);
@@ -102,6 +108,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
     void db.settings.put({ key: 'language', value: l });
+  }, []);
+
+  const setWorkerPhone = useCallback((phone: string) => {
+    setWorkerPhoneState(phone);
+    void db.settings.put({ key: 'workerPhone', value: phone });
   }, []);
 
   const setWorkerName = useCallback((name: string) => {
@@ -134,6 +145,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ready,
       workerName,
       setWorkerName,
+      workerPhone,
+      setWorkerPhone,
       edgeMode,
       setEdgeMode,
       tab,
@@ -146,7 +159,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       useWispr,
       setUseWispr,
     }),
-    [keepProof, setKeepProof, useWispr, setUseWispr, lang, setLang, allEntries, allEmployers, reload, ready, workerName, setWorkerName, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
+    [keepProof, setKeepProof, useWispr, setUseWispr, lang, setLang, allEntries, allEmployers, reload, ready, workerName, setWorkerName, workerPhone, setWorkerPhone, edgeMode, setEdgeMode, tab, setTab, statementFor, openStatement, closeStatement],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

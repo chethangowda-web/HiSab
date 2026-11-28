@@ -43,6 +43,14 @@ export interface UiText {
   cancel: string;
   deleteAsk: string;
   yourName: string;
+  yourPhone: string;
+  employerPhone: string;
+  callBtn: string;
+  callNeedNumbers: string;
+  callBadNumber: string;
+  callCalling: string;
+  callFailed: string;
+  callTooMany: string;
   footerNote: string;
   invalidAmount: string;
   invalidDate: string;
@@ -141,6 +149,14 @@ const en: UiText = {
   cancel: 'Cancel',
   deleteAsk: 'Delete this entry?',
   yourName: 'Your name',
+  yourPhone: 'Your phone number',
+  employerPhone: 'Employer phone number',
+  callBtn: 'Call',
+  callNeedNumbers: 'Add your phone number in Settings and the employer\u2019s number here to call.',
+  callBadNumber: 'Enter a 10-digit Indian mobile number.',
+  callCalling: 'Calling your phone\u2026 pick up and you\u2019ll be connected.',
+  callFailed: 'Could not start the call. Please try again.',
+  callTooMany: 'Too many calls. Please try again later.',
   footerNote: 'Worker-recorded unless marked Employer-confirmed',
   invalidAmount: 'Enter an amount between 1 and 99,999.',
   invalidDate: 'Enter a valid date.',
@@ -238,6 +254,14 @@ const hi: UiText = {
   cancel: 'रद्द करें',
   deleteAsk: 'यह एंट्री हटाएँ?',
   yourName: 'आपका नाम',
+  yourPhone: 'आपका फ़ोन नंबर',
+  employerPhone: 'मालिक का फ़ोन नंबर',
+  callBtn: 'कॉल करें',
+  callNeedNumbers: 'कॉल के लिए सेटिंग्स में अपना नंबर और यहाँ मालिक का नंबर डालें।',
+  callBadNumber: '10 अंकों का भारतीय मोबाइल नंबर डालें।',
+  callCalling: 'आपके फ़ोन पर कॉल आ रही है… उठाइए, आप जुड़ जाएँगे।',
+  callFailed: 'कॉल शुरू नहीं हो सकी। फिर से कोशिश करें।',
+  callTooMany: 'बहुत ज़्यादा कॉल। थोड़ी देर बाद कोशिश करें।',
   footerNote: 'मज़दूर ने दर्ज किया, जब तक "मालिक ने पुष्टि की" न लिखा हो',
   invalidAmount: '1 से 99,999 के बीच रकम लिखें।',
   invalidDate: 'सही तारीख लिखें।',
@@ -335,6 +359,14 @@ const kn: UiText = {
   cancel: 'ರದ್ದು',
   deleteAsk: 'ಈ ದಾಖಲೆಯನ್ನು ಅಳಿಸಬೇಕೇ?',
   yourName: 'ನಿಮ್ಮ ಹೆಸರು',
+  yourPhone: 'ನಿಮ್ಮ ಫೋನ್ ನಂಬರ್',
+  employerPhone: 'ಮಾಲೀಕರ ಫೋನ್ ನಂಬರ್',
+  callBtn: 'ಕರೆ ಮಾಡಿ',
+  callNeedNumbers: 'ಕರೆ ಮಾಡಲು ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ನಿಮ್ಮ ನಂಬರ್ ಮತ್ತು ಇಲ್ಲಿ ಮಾಲೀಕರ ನಂಬರ್ ಹಾಕಿ.',
+  callBadNumber: '10 ಅಂಕಿಗಳ ಭಾರತೀಯ ಮೊಬೈಲ್ ನಂಬರ್ ಹಾಕಿ.',
+  callCalling: 'ನಿಮ್ಮ ಫೋನ್‌ಗೆ ಕರೆ ಬರುತ್ತಿದೆ… ಎತ್ತಿ, ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಲಾಗುತ್ತದೆ.',
+  callFailed: 'ಕರೆ ಪ್ರಾರಂಭಿಸಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  callTooMany: 'ತುಂಬಾ ಕರೆಗಳು. ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಪ್ರಯತ್ನಿಸಿ.',
   footerNote: 'ಕೆಲಸಗಾರರು ದಾಖಲಿಸಿದ್ದು, "ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದು" ಎಂದು ಗುರುತಿಸದ ಹೊರತು',
   invalidAmount: '1 ರಿಂದ 99,999 ರ ನಡುವೆ ಮೊತ್ತ ಬರೆಯಿರಿ.',
   invalidDate: 'ಸರಿಯಾದ ದಿನಾಂಕ ಬರೆಯಿರಿ.',
