@@ -124,11 +124,10 @@ describe('home screen', () => {
     expect(screen.queryByRole('button', { name: /demo/i })).toBeNull();
   });
 
-  it('shows example sentences in the current language', async () => {
+  it('no longer shows the example sentence list', async () => {
     render(<App />);
-    expect(await screen.findByText(EXAMPLES['en-IN'][0])).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Language: हिन्दी' }));
-    expect(await screen.findByText(EXAMPLES['hi-IN'][0])).toBeInTheDocument();
+    await screen.findByText(/welcome/i);
+    expect(screen.queryByText(EXAMPLES['en-IN'][0])).toBeNull();
   });
 
   it('breaks the balance down by employer', async () => {

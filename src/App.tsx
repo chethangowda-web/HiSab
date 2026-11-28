@@ -13,7 +13,7 @@ const SHORT: Record<Lang, string> = { 'kn-IN': 'ಕ', 'hi-IN': 'हि', 'en-IN'
 
 function BrandMark() {
   return (
-    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0D1609] text-[#D9F76E]">
+    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C2570C] text-white">
       <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 3v10" />
         <path d="M8.5 7.5a3.5 3.5 0 0 1 7 0v2.5a3.5 3.5 0 0 1-7 0z" fill="currentColor" fillOpacity="0.22" />
@@ -68,21 +68,15 @@ function TabIcon({ id }: { id: Tab }) {
   }
 }
 
-function Header({ seamless }: { seamless: boolean }) {
-  const { t, lang, setLang } = useApp();
+function Header() {
+  const { lang, setLang } = useApp();
   return (
-    <header
-      className={`no-print flex items-center justify-between gap-2 bg-[#C4F02E] px-4 pt-3.5 ${
-        seamless ? 'pb-2' : 'rounded-b-[24px] pb-3.5 shadow-md'
-      }`}
-    >
+    <header className="no-print flex items-center justify-between gap-2 px-4 pb-2 pt-4">
       <div className="flex min-w-0 items-center gap-2.5">
         <BrandMark />
-        <div className="min-w-0">
-          <h1 className="text-xl font-extrabold tracking-tight text-[#0B1307]">BoliHisab</h1>
-        </div>
+        <h1 className="text-xl font-extrabold tracking-tight text-[#1C1917]">BoliHisab</h1>
       </div>
-      <div role="group" aria-label="Language" className="flex shrink-0 overflow-hidden rounded-full bg-[#0D1609]/12 p-0.5">
+      <div role="group" aria-label="Language" className="flex shrink-0 gap-1 rounded-full border border-[#EADFCB] bg-white p-1">
         {LANGUAGES.map((l) => (
           <button
             key={l.lang}
@@ -90,8 +84,8 @@ function Header({ seamless }: { seamless: boolean }) {
             aria-label={`Language: ${l.label}`}
             aria-pressed={lang === l.lang}
             onClick={() => setLang(l.lang)}
-            className={`h-8 w-9 rounded-full text-xs font-extrabold transition-all ${
-              lang === l.lang ? 'bg-[#0D1609] text-[#D9F76E]' : 'text-[#0B1307] hover:bg-[#0D1609]/10'
+            className={`h-10 w-11 rounded-full text-sm font-extrabold transition-colors ${
+              lang === l.lang ? 'bg-[#C2570C] text-white' : 'text-[#6B6259] hover:bg-[#F3ECDD]'
             }`}
           >
             {SHORT[l.lang]}
@@ -105,8 +99,8 @@ function Header({ seamless }: { seamless: boolean }) {
 function Loading() {
   const { t } = useApp();
   return (
-    <div role="status" className="flex flex-col items-center gap-3 py-20 text-[#B8C9AA]">
-      <span aria-hidden="true" className="h-9 w-9 animate-spin rounded-full border-4 border-[#223519] border-t-[#C9F43A]" />
+    <div role="status" className="flex flex-col items-center gap-3 py-20 text-[#6B6259]">
+      <span aria-hidden="true" className="h-9 w-9 animate-spin rounded-full border-4 border-[#EADFCB] border-t-[#C2570C]" />
       <p className="text-sm font-semibold">{t.loading}</p>
     </div>
   );
@@ -124,9 +118,9 @@ function Shell() {
   const isHome = ready && tab === 'home';
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-[#0B1307]">
-      <Header seamless={isHome} />
-      <main className={`flex-1 pb-24 ${isHome ? '' : 'px-4 pt-4'}`} aria-busy={!ready}>
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-[#FAF6EE]">
+      <Header />
+      <main className={`flex-1 pb-28 ${isHome ? 'pt-2' : 'px-4 pt-3'}`} aria-busy={!ready}>
         {/* Wait for the ledger to load: acting on an empty ledger would give wrong answers. */}
         {!ready && <Loading />}
         {ready && tab === 'home' && <Home />}
@@ -140,8 +134,8 @@ function Shell() {
         {ready && tab === 'payments' && <Payments />}
         {ready && tab === 'settings' && <Settings />}
       </main>
-      <nav className="no-print fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-3 pb-3">
-        <div className="grid grid-cols-5 rounded-full bg-gradient-to-r from-[#C8F135] to-[#E2FA84] p-1.5 text-[#0B1307] shadow-[0_10px_30px_rgba(0,0,0,0.55)]">
+      <nav className="no-print fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-[#EADFCB] bg-white pb-[env(safe-area-inset-bottom)]">
+        <div className="grid grid-cols-5">
           {tabs.map((x) => {
             const active = tab === x.id;
             return (
@@ -150,10 +144,11 @@ function Shell() {
                 type="button"
                 aria-current={active ? 'page' : undefined}
                 onClick={() => setTab(x.id)}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-full px-1 text-[11px] font-bold leading-tight transition-all ${
-                  active ? 'bg-[#0E180A] text-[#D9F76E] shadow-sm' : 'text-[#13200B]/80 hover:text-[#0B1307]'
+                className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 px-1 text-xs font-bold leading-tight transition-colors ${
+                  active ? 'text-[#C2570C]' : 'text-[#6B6259] hover:text-[#1C1917]'
                 }`}
               >
+                {active && <span aria-hidden="true" className="absolute inset-x-5 top-0 h-1 rounded-b-full bg-[#C2570C]" />}
                 <span aria-hidden="true">{x.icon}</span>
                 <span className="truncate">{x.label}</span>
               </button>

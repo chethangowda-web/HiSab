@@ -6,8 +6,8 @@ interface Props {
   onColor?: string;
 }
 
-/** A sleek fintech toggle switch (48px+ touch target) for dark olive surfaces. */
-export default function Switch({ checked, onChange, label, onColor = 'bg-[#C9F43A]' }: Props) {
+/** A large toggle switch (48px touch target). */
+export default function Switch({ checked, onChange, label, onColor = 'bg-[#C2570C]' }: Props) {
   return (
     <button
       type="button"
@@ -15,14 +15,14 @@ export default function Switch({ checked, onChange, label, onColor = 'bg-[#C9F43
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-12 w-[5.5rem] shrink-0 rounded-full border border-[#344E24] p-1 transition-colors focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#C9F43A] ${
-        checked ? onColor : 'bg-[#0C1408]'
+      className={`relative h-12 w-[5.5rem] shrink-0 rounded-full p-1 transition-colors focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#C2570C] ${
+        checked ? onColor : 'bg-[#D9CDB6]'
       }`}
     >
       <span
         aria-hidden="true"
-        className={`flex h-9 w-9 items-center justify-center rounded-full text-base font-extrabold shadow transition-transform ${
-          checked ? 'translate-x-[2.55rem] bg-[#0B1307] text-[#D9F76E]' : 'bg-[#2B401E] text-[#D9F76E]'
+        className={`flex h-10 w-10 items-center justify-center rounded-full bg-white text-base font-extrabold text-[#C2570C] shadow transition-transform ${
+          checked ? 'translate-x-[2.5rem]' : ''
         }`}
       >
         {checked ? '✓' : ''}

@@ -1,38 +1,113 @@
 @import "tailwindcss";
 
+:root {
+  --bg: #faf6ee;
+  --card: #ffffff;
+  --line: #eadfcb;
+  --ink: #1c1917;
+  --muted: #6b6259;
+  --accent: #c2570c;
+  --accent-soft: #fdeede;
+  --green: #166534;
+  --green-soft: #e6f4ea;
+  --red: #b42318;
+  --red-soft: #fdecea;
+}
+
 html { font-size: 16px; }
 body {
   margin: 0;
-  background-color: #0b1307;
-  color: #f3f7ec;
+  background-color: var(--bg);
+  color: var(--ink);
   font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', 'Noto Sans Kannada', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Fintech Olive + Acid Lime Surfaces */
-.fintech-card {
-  background-color: #15200e;
-  border: 1px solid #293e1d;
-  border-radius: 24px;
-  box-shadow: 0 14px 36px -14px rgba(0, 0, 0, 0.65);
+/* Shared building blocks: warm cream page, white cards, one saffron accent. */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(60, 40, 10, 0.05), 0 8px 24px -16px rgba(60, 40, 10, 0.25);
+}
+.row {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.well {
+  background: #f6efe2;
+  border-radius: 14px;
+}
+.eyebrow {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  border-radius: 9999px;
+  padding: 0 1.25rem;
+  font-size: 1rem;
+  font-weight: 800;
+  transition: transform 0.1s, filter 0.15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.07); }
+.btn-ghost { background: var(--card); color: var(--ink); border: 1.5px solid var(--line); }
+.btn-ghost:hover { border-color: #d3c1a0; }
+.btn-danger { background: var(--red); color: #fff; }
+.input {
+  min-height: 3rem;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  padding: 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.pill {
+  display: inline-block;
+  border-radius: 9999px;
+  padding: 0.15rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.fintech-row {
-  background-color: #16220f;
-  border: 1px solid #263a1a;
-  border-radius: 18px;
+/* The hero microphone. */
+.mic {
+  position: relative;
+  display: flex;
+  height: 11rem;
+  width: 11rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #fff;
+  background: radial-gradient(circle at 30% 25%, #f59a3d 0%, #d9600b 70%);
+  box-shadow: 0 18px 40px -14px rgba(194, 87, 12, 0.75), inset 0 -6px 14px rgba(120, 40, 0, 0.25);
+  transition: transform 0.12s;
 }
-
-.lime-bowl {
-  background: linear-gradient(165deg, #b5e922 0%, #d9f76e 100%);
-  color: #0b1307;
-}
-
-.lime-inner {
-  background: linear-gradient(180deg, #e7fc95 0%, #d4f462 100%);
-  border: 1px solid rgba(11, 19, 7, 0.1);
-  border-radius: 22px;
-  color: #0b1307;
+.mic:active:not(:disabled) { transform: scale(0.96); }
+.mic:disabled { cursor: default; }
+.mic-listening { background: radial-gradient(circle at 30% 25%, #ef6a5a 0%, #b42318 75%); }
+.mic-thinking { background: radial-gradient(circle at 30% 25%, #f5c15a 0%, #c98a12 75%); }
+.mic-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 3px solid var(--accent);
+  animation: hisab-aura 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
 @keyframes hisab-bar { 0%, 100% { transform: scaleY(.32); opacity: 0.65; } 50% { transform: scaleY(1); opacity: 1; } }

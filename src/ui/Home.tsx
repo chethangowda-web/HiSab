@@ -9,19 +9,15 @@ import VoicePanel from './VoicePanel';
 function Welcome() {
   const { t } = useApp();
   return (
-    <section className="rounded-b-[28px] bg-gradient-to-b from-[#C4F02E] to-[#DCF873] px-4 pb-5 pt-2 shadow-lg">
-      <div className="lime-inner p-5 text-center">
-        <span className="inline-flex rounded-full bg-[#0D1609] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#D9F76E]">
-          Voice-First Khata
-        </span>
-        <h2 className="mt-2.5 text-2xl font-extrabold tracking-tight text-[#0B1307]">{t.welcomeTitle}</h2>
-        <p className="mt-1.5 text-sm font-medium leading-snug text-[#1E2E13]">{t.welcomeText}</p>
-      </div>
+    <section className="card mx-4 p-5 text-center">
+      <span className="pill bg-[#FDEEDE] text-[#9A3F06]">Voice-First Khata</span>
+      <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#1C1917]">{t.welcomeTitle}</h2>
+      <p className="mt-2 text-base font-medium leading-snug text-[#6B6259]">{t.welcomeText}</p>
     </section>
   );
 }
 
-/** The balance, seamlessly fused with the top lime header bowl just like the fintech reference. */
+/** The balance owed, large and calm, with this month's earnings and a chip per employer. */
 function Hero({ compact }: { compact: boolean }) {
   const { t, entries, employers } = useApp();
   const owed = employers.reduce((sum, e) => sum + balance(entries, e.id), 0);
@@ -33,45 +29,36 @@ function Hero({ compact }: { compact: boolean }) {
 
   if (compact) {
     return (
-      <section className="rounded-b-[22px] bg-[#C4F02E] px-4 pb-3 pt-1 shadow-md">
-        <div className="lime-inner flex items-baseline justify-between gap-3 px-4 py-2.5">
-          <p className="text-sm font-bold text-[#1A290F]">{t.owedToYou}</p>
-          <p data-testid="owed-total" className="text-xl font-extrabold tabular-nums text-[#0B1307]">
-            {inr(owed)}
-          </p>
-        </div>
+      <section className="card mx-4 flex items-baseline justify-between gap-3 px-4 py-3">
+        <p className="text-base font-bold text-[#6B6259]">{t.owedToYou}</p>
+        <p data-testid="owed-total" className="text-2xl font-extrabold tabular-nums text-[#166534]">
+          {inr(owed)}
+        </p>
       </section>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="rounded-b-[28px] bg-gradient-to-b from-[#C4F02E] to-[#DCF873] px-4 pb-4 pt-1 shadow-[0_14px_34px_-14px_rgba(181,233,34,0.35)]">
-        <div className="lime-inner p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#2B3D1B]">{t.owedToYou}</p>
-          <p data-testid="owed-total" className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums text-[#0B1307]">
-            {inr(owed)}
-          </p>
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#15803D] px-2.5 py-0.5 text-xs font-bold text-white">
-              ▲ {t.earnedThisMonth}: <span className="tabular-nums">{inr(month)}</span>
-            </span>
-          </div>
-        </div>
+    <div className="flex flex-col gap-4 px-4">
+      <section className="px-1 text-center">
+        <p className="eyebrow">{t.owedToYou}</p>
+        <p data-testid="owed-total" className="mt-1 text-6xl font-extrabold tracking-tight tabular-nums text-[#166534]">
+          {inr(owed)}
+        </p>
+        <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-3 py-1 text-sm font-bold text-[#166534]">
+          ▲ {t.earnedThisMonth}: <span className="tabular-nums">{inr(month)}</span>
+        </p>
       </section>
 
       {rows.length > 0 && (
-        <section className="px-4">
-          <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-[#8EA37D]">{t.byEmployer}</h2>
-          <ul data-testid="owed-by-employer" className="flex flex-wrap gap-2">
+        <section>
+          <h2 className="eyebrow mb-2 text-center">{t.byEmployer}</h2>
+          <ul data-testid="owed-by-employer" className="flex flex-wrap justify-center gap-2">
             {rows.map(({ e, bal }) => (
-              <li
-                key={e.id}
-                className="flex items-center gap-2 rounded-full border border-[#2A3F1D] bg-[#14200D] py-1 pl-1 pr-3.5"
-              >
-                <Avatar name={e.name} size="h-7 w-7 text-xs" />
-                <span className="min-w-0 break-words text-sm font-semibold text-[#F1F6E8]">{e.name}</span>
-                <span className="text-sm font-extrabold tabular-nums text-[#C9F43A]">{inr(bal)}</span>
+              <li key={e.id} className="row flex items-center gap-2 rounded-full py-1 pl-1 pr-3.5">
+                <Avatar name={e.name} size="h-8 w-8 text-sm" />
+                <span className="min-w-0 break-words text-sm font-semibold text-[#1C1917]">{e.name}</span>
+                <span className="text-sm font-extrabold tabular-nums text-[#166534]">{inr(bal)}</span>
               </li>
             ))}
           </ul>

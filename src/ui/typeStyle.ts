@@ -1,21 +1,21 @@
 import type { EntryType } from '../domain/types';
 
-/** High-contrast fintech colours per entry type on Obsidian Olive surfaces. */
+/** Warm, high-contrast colours per entry type on white cards. */
 export const TYPE_STYLE: Record<EntryType, { icon: string; chip: string; amount: string }> = {
-  work: { icon: '🛠️', chip: 'bg-[#213517] text-[#C9F43A] border border-[#385727]', amount: 'text-[#C9F43A]' },
-  overtime: { icon: '⏰', chip: 'bg-[#233217] text-[#FDE047] border border-[#475F2A]', amount: 'text-[#FDE047]' },
-  advance: { icon: '💸', chip: 'bg-[#351923] text-[#FB7185] border border-[#5B283A]', amount: 'text-[#FB7185]' },
-  payment: { icon: '💰', chip: 'bg-[#1D3525] text-[#4ADE80] border border-[#2D553B]', amount: 'text-[#4ADE80]' },
+  work: { icon: '🛠️', chip: 'bg-[#E6F4EA] text-[#166534]', amount: 'text-[#166534]' },
+  overtime: { icon: '⏰', chip: 'bg-[#FEF3C7] text-[#92400E]', amount: 'text-[#92400E]' },
+  advance: { icon: '💸', chip: 'bg-[#FDECEA] text-[#B42318]', amount: 'text-[#B42318]' },
+  payment: { icon: '💰', chip: 'bg-[#E0F2F1] text-[#0F766E]', amount: 'text-[#0F766E]' },
 };
 
-/** Soft olive/lime/emerald avatar pills with crisp contrast. */
+/** Soft warm avatar pills with crisp contrast. */
 const AVATAR_COLOURS = [
-  'bg-[#C9F43A] text-[#0B1307]',
-  'bg-[#263C1A] text-[#D9F76E] border border-[#3E612A]',
-  'bg-[#3A4D1A] text-[#F4FCE2] border border-[#587428]',
-  'bg-[#1B3A2C] text-[#6EE7B7] border border-[#2C5B46]',
-  'bg-[#3B3014] text-[#FDE047] border border-[#5D4C20]',
-  'bg-[#131F0D] text-[#E6FA9C] border border-[#334F24]',
+  'bg-[#FDEEDE] text-[#9A3F06]',
+  'bg-[#E6F4EA] text-[#166534]',
+  'bg-[#E0ECFB] text-[#1D4E89]',
+  'bg-[#F3E8FB] text-[#6B2C91]',
+  'bg-[#FEF3C7] text-[#92400E]',
+  'bg-[#E0F2F1] text-[#0F766E]',
 ];
 export function avatarColour(name: string): string {
   let h = 0;

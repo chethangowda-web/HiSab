@@ -10,8 +10,8 @@ import Switch from './Switch';
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="fintech-card flex flex-col gap-3 p-4">
-      <h2 className="text-lg font-extrabold text-[#F3F7EC]">{title}</h2>
+    <section className="card flex flex-col gap-3 p-4">
+      <h2 className="text-lg font-extrabold text-[#1C1917]">{title}</h2>
       {children}
     </section>
   );
@@ -36,12 +36,12 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
     }
   };
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[#263A1A] bg-[#0F180A] p-2.5">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 well p-2.5">
       <Avatar name={name} size="h-10 w-10 text-lg" />
-      <span className="min-w-[7rem] flex-1 text-lg font-bold text-[#F3F7EC]">{name}</span>
+      <span className="min-w-[7rem] flex-1 text-lg font-bold text-[#1C1917]">{name}</span>
       {/* wraps to its own line on narrow screens instead of squeezing the name */}
       <span className="ml-auto flex items-center gap-2">
-        <span className="text-lg font-bold text-[#9BB08B]">₹</span>
+        <span className="text-lg font-bold text-[#6B6259]">₹</span>
         <input
           aria-label={`${name} ${t.dailyRateAria}`}
           inputMode="numeric"
@@ -49,9 +49,9 @@ function RateRow({ id, name, rate }: { id: string; name: string; rate?: number }
           onChange={(ev) => setValue(ev.target.value)}
           onBlur={() => void save()}
           onKeyDown={(ev) => ev.key === 'Enter' && (ev.target as HTMLInputElement).blur()}
-          className="h-12 w-24 rounded-2xl border border-[#344E24] bg-[#16220F] px-3 text-right text-xl font-bold tabular-nums text-[#F3F7EC]"
+          className="input w-24 text-right text-xl font-bold tabular-nums"
         />
-        <span className="text-sm text-[#9BB08B]">{t.perDayUnit}</span>
+        <span className="text-sm text-[#6B6259]">{t.perDayUnit}</span>
       </span>
     </li>
   );
@@ -90,7 +90,7 @@ export default function Settings() {
   return (
     <div className="flex flex-col gap-4">
       <Card title={t.language}>
-        <p className="text-sm text-[#9BB08B]">{t.languageHelp}</p>
+        <p className="text-sm text-[#6B6259]">{t.languageHelp}</p>
         <div className="grid grid-cols-1 gap-2">
           {LANGUAGES.map((l) => (
             <button
@@ -98,10 +98,8 @@ export default function Settings() {
               type="button"
               aria-pressed={lang === l.lang}
               onClick={() => setLang(l.lang)}
-              className={`h-14 rounded-2xl px-6 text-xl font-bold transition ${
-                lang === l.lang
-                  ? 'bg-[#C9F43A] text-[#0B1307] shadow-md'
-                  : 'border border-[#2A401D] bg-[#0F180A] text-[#E5F0D8] hover:border-[#496D31]'
+              className={`btn h-14 rounded-2xl px-6 text-xl ${
+                lang === l.lang ? 'btn-primary' : 'btn-ghost'
               }`}
             >
               {lang === l.lang && <span aria-hidden="true">✓ </span>}
@@ -117,17 +115,17 @@ export default function Settings() {
           onChange={(e) => setWorkerName(e.target.value)}
           aria-label={t.yourName}
           autoComplete="name"
-          className="h-14 rounded-2xl border border-[#344E24] bg-[#0F180A] px-4 text-xl font-semibold text-[#F3F7EC] focus:border-[#C9F43A] focus:outline-none"
+          className="input h-14 text-xl font-semibold"
         />
       </Card>
 
       <Card title={t.voiceEngineTitle}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="flex items-center gap-2 text-lg font-bold text-[#F3F7EC]">
+            <p className="flex items-center gap-2 text-lg font-bold text-[#1C1917]">
               <WisprMark /> Wispr Flow
             </p>
-            <p role="status" className={wispr === 'ok' ? 'text-sm font-semibold text-[#C9F43A]' : 'text-sm text-[#9BB08B]'}>
+            <p role="status" className={wispr === 'ok' ? 'text-sm font-semibold text-[#166534]' : 'text-sm text-[#6B6259]'}>
               {wispr === 'checking' ? t.edgeChecking : wispr === 'ok' ? t.wisprOk : t.wisprMissing}
             </p>
           </div>
@@ -137,7 +135,7 @@ export default function Settings() {
 
       <Card title={t.keepProofTitle}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#9BB08B]">{t.keepProofHelp}</p>
+          <p className="text-sm text-[#6B6259]">{t.keepProofHelp}</p>
           <Switch checked={keepProof} onChange={setKeepProof} label={t.keepProofTitle} />
         </div>
       </Card>
@@ -149,13 +147,13 @@ export default function Settings() {
               <RateRow key={e.id} id={e.id} name={e.name} rate={e.dailyRate} />
             ))}
           </ul>
-          <p className="text-sm text-[#9BB08B]">{t.ratesHelp}</p>
+          <p className="text-sm text-[#6B6259]">{t.ratesHelp}</p>
         </Card>
       )}
 
       <Card title={t.edgeLabel}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#9BB08B]">{t.edgeHelp}</p>
+          <p className="text-sm text-[#6B6259]">{t.edgeHelp}</p>
           <Switch checked={edgeMode} onChange={setEdgeMode} label={t.edgeLabel} />
         </div>
         {edge !== 'idle' && (
@@ -163,10 +161,10 @@ export default function Settings() {
             role="status"
             className={`rounded-2xl px-3.5 py-2.5 text-sm font-semibold ${
               edge === 'ok' || edge === 'sarvam'
-                ? 'border border-[#3D5E29] bg-[#1B2D12] text-[#D9F76E]'
+                ? 'border border-[#BFE3C8] bg-[#E6F4EA] text-[#166534]'
                 : edge === 'down'
-                  ? 'border border-amber-500/40 bg-amber-950/60 text-amber-200'
-                  : 'bg-[#0F180A] text-[#B8C9AA]'
+                  ? 'border border-[#F2D08A] bg-[#FEF3C7] text-[#92400E]'
+                  : 'bg-[#F3ECDD] text-[#6B6259]'
             }`}
           >
             {edge === 'checking' ? t.edgeChecking : edge === 'sarvam' ? t.edgeSarvamOk : edge === 'ok' ? t.edgeOk : t.edgeDown}

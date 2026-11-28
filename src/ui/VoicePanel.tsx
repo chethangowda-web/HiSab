@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { COMMAND_EXAMPLES, EXAMPLES } from '../i18n/examples';
+import { COMMAND_EXAMPLES } from '../i18n/examples';
 import ActionCard from './ActionCard';
 import { useApp } from './AppContext';
 import ConfirmCard from './ConfirmCard';
@@ -8,7 +8,7 @@ import { whatsappUrl, type UseDialogue } from './useDialogue';
 
 function MicSvg() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-16 w-16 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
       <rect x="9" y="2.5" width="6" height="11" rx="3" fill="currentColor" fillOpacity="0.22" />
       <path d="M5 10.5a7 7 0 0 0 14 0" />
       <path d="M12 17.5v4" />
@@ -55,46 +55,37 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
     <section className="flex flex-col gap-3.5">
       {(d.listening || (d.thinking && (d.engine === 'wispr' || d.engine === 'sarvam'))) && <ListeningOverlay d={d} />}
       {!d.supported && (
-        <p role="status" className="w-full rounded-2xl border border-[#44561D] bg-[#18220D] px-4 py-2.5 text-center text-sm font-semibold text-[#E8FC98]">
+        <p role="status" className="w-full rounded-2xl border border-[#F2D08A] bg-[#FEF3C7] px-4 py-2.5 text-center text-sm font-semibold text-[#92400E]">
           {t.typeBanner}
         </p>
       )}
       {d.micIssue === 'denied' && (
-        <p role="alert" className="w-full rounded-2xl border border-rose-500/40 bg-rose-950/70 px-4 py-2.5 text-center text-sm font-semibold text-rose-200">
+        <p role="alert" className="w-full rounded-2xl border border-[#F3B8B0] bg-[#FDECEA] px-4 py-2.5 text-center text-sm font-semibold text-[#B42318]">
           {t.micDenied}
         </p>
       )}
 
-      {/* Sleek horizontal action bar */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* The hero: one huge microphone */}
+      <div className="flex flex-col items-center gap-3 py-2">
         {d.supported && (
           <button
             type="button"
             aria-label={t.tapToSpeak}
             onClick={d.start}
             disabled={busy}
-            className={`flex h-11 items-center gap-2 rounded-full px-4 text-sm font-extrabold transition active:scale-95 ${
-              d.listening
-                ? 'bg-rose-600 text-white'
-                : d.thinking
-                  ? 'animate-pulse bg-amber-300 text-[#0B1307]'
-                  : 'bg-[#C9F43A] text-[#0B1307] shadow-sm hover:brightness-105'
-            }`}
+            className={`mic ${d.listening ? 'mic-listening' : d.thinking ? 'mic-thinking animate-pulse' : ''}`}
           >
+            {d.listening && <span aria-hidden="true" className="mic-ring" />}
             <MicSvg />
-            <span>{d.thinking ? t.thinking : d.listening ? t.listening : t.tapToSpeak}</span>
           </button>
         )}
-        {edgeMode && (
-          <span className="ml-auto rounded-full bg-[#182610] px-2.5 py-1 text-[11px] font-bold text-[#C9F43A]">
-            ✨ Sarvam 105B
-          </span>
-        )}
+        <p className="text-lg font-extrabold text-[#1C1917]">{d.thinking ? t.thinking : d.listening ? t.listening : d.supported ? t.tapToSpeak : ''}</p>
+        {edgeMode && <span className="pill bg-[#F3ECDD] text-[#6B6259]">✨ Sarvam 105B</span>}
       </div>
 
       {d.heard && d.phase !== 'SAVED' && (
-        <p data-testid="heard" className="card-enter w-full rounded-2xl bg-[#14200D] px-4 py-2.5 text-sm text-[#E5F0D8]">
-          <span className="font-bold text-[#C9F43A]">{t.youSaid}:</span> “{d.heard}”
+        <p data-testid="heard" className="card-enter row w-full px-4 py-3 text-base text-[#1C1917]">
+          <span className="font-bold text-[#C2570C]">{t.youSaid}:</span> “{d.heard}”
         </p>
       )}
 
@@ -102,7 +93,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
         <p
           aria-live="polite"
           className={`card-enter w-full ${
-            d.phase === 'CONFIRM' ? 'text-center text-sm font-medium text-[#9BB08B]' : 'rounded-2xl border border-[#293E1D] bg-[#15200E] p-3.5 text-base font-bold text-[#F3F7EC]'
+            d.phase === 'CONFIRM' ? 'text-center text-base font-medium text-[#6B6259]' : 'card p-4 text-lg font-bold text-[#1C1917]'
           }`}
         >
           <span aria-hidden="true">🔊 </span>
@@ -122,7 +113,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
           target="_blank"
           rel="noopener"
           onClick={d.dismissWhatsApp}
-          className="card-enter flex h-14 w-full items-center justify-center rounded-full bg-[#C9F43A] text-base font-extrabold text-[#0B1307] shadow-lg transition active:scale-[0.98]"
+          className="card-enter btn btn-primary h-14 w-full text-base"
         >
           <span aria-hidden="true">📲 </span>
           {t.openWhatsApp}
@@ -134,7 +125,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
           ref={savedRef}
           data-testid="saved-bar"
           role="status"
-          className="card-enter flex w-full items-center justify-between gap-3 rounded-full bg-[#C9F43A] px-4 py-2 text-[#0B1307] shadow-lg"
+          className="card-enter flex w-full items-center justify-between gap-3 rounded-full bg-[#E6F4EA] px-4 py-2 text-[#166534] ring-1 ring-[#BFE3C8]"
         >
           <span className="min-w-0 truncate text-sm font-extrabold">
             <span aria-hidden="true">✓ </span>
@@ -143,7 +134,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
           <button
             type="button"
             onClick={() => void d.undo()}
-            className="h-9 shrink-0 rounded-full bg-[#0B1307] px-3.5 text-xs font-bold text-[#D9F76E] transition active:scale-95"
+            className="btn h-11 shrink-0 bg-white px-4 text-sm text-[#166534] ring-1 ring-[#BFE3C8]"
           >
             {t.undo}
           </button>
@@ -159,9 +150,9 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
               onChange={(e) => setText(e.target.value)}
               placeholder={t.typeHere}
               aria-label={t.typeHere}
-              className="h-12 min-w-0 flex-1 rounded-full border border-[#314A22] bg-[#14200D] px-4 text-base text-[#F3F7EC] placeholder:text-[#7E9270] focus:border-[#C9F43A] focus:outline-none"
+              className="input min-w-0 flex-1 rounded-full placeholder:text-[#9C9183]"
             />
-            <button type="submit" className="h-12 rounded-full bg-[#C9F43A] px-5 text-sm font-extrabold text-[#0B1307] shadow-sm transition active:scale-95">
+            <button type="submit" className="btn btn-primary px-5">
               {t.send}
             </button>
           </form>
@@ -171,31 +162,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
       {d.phase === 'IDLE' && (
         <section className="flex flex-col gap-3 pt-1">
           <div>
-            <h2 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-[#8EA37D]">{t.examplesTitle}</h2>
-            <ul className="divide-y divide-[#1D2D13] rounded-2xl bg-[#131E0C]">
-              {EXAMPLES[lang].map((e) => (
-                <li key={e}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void d.typed(e)}
-                    className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-sm font-medium text-[#EAF4DC] transition hover:bg-[#192810] disabled:opacity-50"
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1E3014] text-xs text-[#C9F43A]">
-                        💬
-                      </span>
-                      <span className="min-w-0">{e}</span>
-                    </span>
-                    <span aria-hidden="true" className="shrink-0 text-[#7E9270]">›</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-[#8EA37D]">{t.commandsTitle}</h2>
+            <h2 className="eyebrow mb-2">{t.commandsTitle}</h2>
             <ul data-testid="command-chips" className="flex flex-wrap gap-1.5">
               {COMMAND_EXAMPLES[lang].map((c, i) => (
                 <li key={c}>
@@ -203,7 +170,7 @@ export default function VoicePanel({ d }: { d: UseDialogue }) {
                     type="button"
                     disabled={busy}
                     onClick={() => void d.typed(c)}
-                    className="rounded-full bg-[#15220E] px-3 py-1.5 text-xs font-semibold text-[#C9E3A4] transition hover:bg-[#1E3014] disabled:opacity-50"
+                    className="rounded-full border border-[#EADFCB] bg-white px-3.5 py-2 text-sm font-semibold text-[#1C1917] transition hover:border-[#D3C1A0] disabled:opacity-50"
                   >
                     <span aria-hidden="true">{['📄', '📲', '↩️', '⭐'][i]} </span>“{c}”
                   </button>
